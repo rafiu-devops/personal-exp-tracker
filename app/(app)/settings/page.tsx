@@ -8,6 +8,7 @@ import {
   Card,
   Chip,
   FormField,
+  IconButton,
   Input,
   SectionTitle,
   Sheet,
@@ -176,7 +177,18 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Settings" />
+      <PageHeader
+        title="Settings"
+        actions={
+          <IconButton
+            label="Sign out"
+            onClick={() => signOutUser()}
+            className="text-foreground/70 hover:bg-negative/10 hover:text-negative"
+          >
+            <LogoutIcon className="h-5 w-5" />
+          </IconButton>
+        }
+      />
 
       <div>
         <SectionTitle title="Profile" />
@@ -294,13 +306,6 @@ export default function SettingsPage() {
       <div>
         <SectionTitle title="Install" />
         <InstallApp />
-      </div>
-
-      <div>
-        <SectionTitle title="Account" />
-        <Button variant="secondary" fullWidth onClick={() => signOutUser()}>
-          <LogoutIcon className="h-4 w-4" /> Sign out
-        </Button>
       </div>
 
       <p className="pt-2 text-center text-xs text-foreground/40">
