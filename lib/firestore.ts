@@ -38,6 +38,17 @@ export function withId<T>(snap: QueryDocumentSnapshot): T & { id: string } {
 }
 
 /**
+ * Remove keys whose value is `undefined`. Firestore throws
+ * "Unsupported field value: undefined" on writes that include them, so every
+ * payload must be passed through this before being written.
+ */
+export function stripUndefined<T extends object>(data: T): T {
+  return Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined)
+  ) as T;
+}
+
+/**
  * Make sure a profile document exists for the signed-in user, and seed the
  * default categories on first login.
  */
@@ -56,7 +67,7 @@ export async function ensureUserProfile(
       email: user.email ?? existing.email ?? null,
       updatedAt: Date.now(),
     };
-    await setDoc(ref, updated, { merge: true });
+    await setDoc(ref, stripUndefined(updated), { merge: true });
     return updated;
   }
 
@@ -72,10 +83,10 @@ export async function ensureUserProfile(
   };
 
   const batch = writeBatch(db);
-  batch.set(ref, profile);
+  batch.set(ref, stripUndefined(profile));
   for (const category of DEFAULT_CATEGORIES) {
     const categoryRef = doc(collection(db, "users", user.uid, "categories"));
-    batch.set(categoryRef, { ...category, createdAt: now });
+    batch.set(categoryRef, stripUndefined({ ...category, createdAt: now }));
   }
   await batch.commit();
 

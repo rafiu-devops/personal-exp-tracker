@@ -18,9 +18,9 @@ import {
   updateProfile,
   type User,
 } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { deleteField, doc, setDoc } from "firebase/firestore";
 import { getDb, getFirebaseAuth, getGoogleAuthProvider, isFirebaseConfigured } from "./firebase";
-import { ensureUserProfile } from "./firestore";
+import { ensureUserProfile, stripUndefined } from "./firestore";
 import { friendlyError } from "./errors";
 import type { UserProfile } from "./types";
 
@@ -113,19 +113,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (patch: Partial<Pick<UserProfile, "name" | "currency" | "photoURL">>) => {
       const current = getFirebaseAuth().currentUser;
       if (!current) throw new Error("Not signed in");
-      const next: Partial<UserProfile> = { ...patch, updatedAt: Date.now() };
+      const next: Record<string, unknown> = { ...patch, updatedAt: Date.now() };
       if (patch.photoURL === "") {
-        // Allow clearing the avatar.
-        next.photoURL = undefined;
+        // Allow clearing the avatar (removes the field on merge).
+        next.photoURL = deleteField();
       }
-      await setDoc(doc(getDb(), "users", current.uid), next, { merge: true });
+      await setDoc(doc(getDb(), "users", current.uid), stripUndefined(next), {
+        merge: true,
+      });
       if (patch.name || patch.photoURL !== undefined) {
         await updateProfile(current, {
           ...(patch.name ? { displayName: patch.name } : {}),
           ...(patch.photoURL !== undefined ? { photoURL: patch.photoURL || null } : {}),
         });
       }
-      setProfile((prev) => (prev ? { ...prev, ...next } : prev));
+      setProfile((prev) =>
+        prev ? { ...prev, ...patch, updatedAt: Date.now() } : prev
+      );
     },
     []
   );

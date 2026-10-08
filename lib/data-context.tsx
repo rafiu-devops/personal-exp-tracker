@@ -19,7 +19,7 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "./auth-context";
 import { getDb, isFirebaseConfigured } from "./firebase";
-import { userCollection, withId } from "./firestore";
+import { stripUndefined, userCollection, withId } from "./firestore";
 import { computeShares } from "./split";
 import { SELF_ID } from "./types";
 import type {
@@ -227,18 +227,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addCategory = useCallback(async (values: CategoryValues) => {
     const u = requireUid();
-    const ref = await addDoc(userCollection(u, "categories"), {
-      ...values,
-      isDefault: false,
-      createdAt: Date.now(),
-    });
+    const ref = await addDoc(
+      userCollection(u, "categories"),
+      stripUndefined({ ...values, isDefault: false, createdAt: Date.now() })
+    );
     return ref.id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const updateCategory = useCallback(async (id: string, values: Partial<CategoryValues>) => {
     const u = requireUid();
-    await updateDoc(doc(getDb(), "users", u, "categories", id), values);
+    await updateDoc(doc(getDb(), "users", u, "categories", id), stripUndefined(values));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
@@ -250,24 +249,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addPerson = useCallback(async (values: PersonValues) => {
     const u = requireUid();
-    const ref = await addDoc(userCollection(u, "people"), {
-      name: values.name.trim(),
-      phone: cleanOptional(values.phone),
-      email: cleanOptional(values.email),
-      createdAt: Date.now(),
-    });
+    const ref = await addDoc(
+      userCollection(u, "people"),
+      stripUndefined({
+        name: values.name.trim(),
+        phone: cleanOptional(values.phone),
+        email: cleanOptional(values.email),
+        createdAt: Date.now(),
+      })
+    );
     return ref.id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const updatePerson = useCallback(async (id: string, values: Partial<PersonValues>) => {
     const u = requireUid();
-    await updateDoc(doc(getDb(), "users", u, "people", id), {
-      ...values,
-      name: values.name?.trim(),
-      phone: cleanOptional(values.phone),
-      email: cleanOptional(values.email),
-    });
+    await updateDoc(
+      doc(getDb(), "users", u, "people", id),
+      stripUndefined({
+        ...values,
+        name: values.name?.trim(),
+        phone: cleanOptional(values.phone),
+        email: cleanOptional(values.email),
+      })
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
@@ -280,26 +285,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addGroup = useCallback(async (values: GroupValues) => {
     const u = requireUid();
     const now = Date.now();
-    const ref = await addDoc(userCollection(u, "groups"), {
-      name: values.name.trim(),
-      description: cleanOptional(values.description),
-      memberIds: values.memberIds ?? [],
-      archived: false,
-      createdAt: now,
-      updatedAt: now,
-    });
+    const ref = await addDoc(
+      userCollection(u, "groups"),
+      stripUndefined({
+        name: values.name.trim(),
+        description: cleanOptional(values.description),
+        memberIds: values.memberIds ?? [],
+        archived: false,
+        createdAt: now,
+        updatedAt: now,
+      })
+    );
     return ref.id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const updateGroup = useCallback(async (id: string, values: Partial<GroupValues>) => {
     const u = requireUid();
-    await updateDoc(doc(getDb(), "users", u, "groups", id), {
-      ...values,
-      name: values.name?.trim(),
-      description: cleanOptional(values.description),
-      updatedAt: Date.now(),
-    });
+    await updateDoc(
+      doc(getDb(), "users", u, "groups", id),
+      stripUndefined({
+        ...values,
+        name: values.name?.trim(),
+        description: cleanOptional(values.description),
+        updatedAt: Date.now(),
+      })
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
@@ -312,10 +323,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addExpense = useCallback(async (values: ExpenseFormValues) => {
     const u = requireUid();
     const payload = buildExpense(values);
-    const ref = await addDoc(userCollection(u, "expenses"), {
-      ...payload,
-      createdAt: Date.now(),
-    });
+    const ref = await addDoc(
+      userCollection(u, "expenses"),
+      stripUndefined({ ...payload, createdAt: Date.now() })
+    );
     return ref.id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
@@ -323,7 +334,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateExpense = useCallback(async (id: string, values: ExpenseFormValues) => {
     const u = requireUid();
     const payload = buildExpense(values);
-    await setDoc(doc(getDb(), "users", u, "expenses", id), payload, { merge: true });
+    await setDoc(doc(getDb(), "users", u, "expenses", id), stripUndefined(payload), {
+      merge: true,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
@@ -335,15 +348,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addSettlement = useCallback(async (values: SettlementValues) => {
     const u = requireUid();
-    const ref = await addDoc(userCollection(u, "settlements"), {
-      fromPersonId: values.fromPersonId,
-      toPersonId: values.toPersonId,
-      amount: Math.round(values.amount),
-      date: values.date,
-      note: cleanOptional(values.note),
-      groupId: cleanOptional(values.groupId),
-      createdAt: Date.now(),
-    });
+    const ref = await addDoc(
+      userCollection(u, "settlements"),
+      stripUndefined({
+        fromPersonId: values.fromPersonId,
+        toPersonId: values.toPersonId,
+        amount: Math.round(values.amount),
+        date: values.date,
+        note: cleanOptional(values.note),
+        groupId: cleanOptional(values.groupId),
+        createdAt: Date.now(),
+      })
+    );
     return ref.id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
