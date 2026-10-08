@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   Avatar,
@@ -27,6 +27,22 @@ const CURRENCIES = ["PKR", "USD", "EUR", "GBP", "INR", "AED", "SAR"];
 const EMOJI_CHOICES = ["🍔", "🛒", "🚗", "🏠", "💡", "💊", "🎬", "🛍️", "✈️", "📚", "🎁", "📱", "☕", "🐾", "🏋️", "💰"];
 const COLOR_CHOICES = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#0ea5e9", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#64748b"];
 
+/** Read an image file, centre-crop it to a square and shrink it to a small data URL. */
+async function resizeImageToSquare(file: File, size: number): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const side = Math.min(bitmap.width, bitmap.height);
+  const sx = (bitmap.width - side) / 2;
+  const sy = (bitmap.height - side) / 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas is not supported");
+  ctx.drawImage(bitmap, sx, sy, side, side, 0, 0, size, size);
+  bitmap.close?.();
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
+
 export default function SettingsPage() {
   const { profile, updateAccount, signOutUser } = useAuth();
   const { categories, addCategory, updateCategory, deleteCategory } = useData();
@@ -34,6 +50,8 @@ export default function SettingsPage() {
 
   const [name, setName] = useState("");
   const [savingName, setSavingName] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const [catOpen, setCatOpen] = useState(false);
   const [editingCat, setEditingCat] = useState<Category | null>(null);
@@ -61,6 +79,37 @@ export default function SettingsPage() {
       toast(friendlyError(error), "error");
     } finally {
       setSavingName(false);
+    }
+  };
+
+  const pickPhoto = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast("Choose an image file", "error");
+      return;
+    }
+    setSavingPhoto(true);
+    try {
+      const dataUrl = await resizeImageToSquare(file, 256);
+      await updateAccount({ photoURL: dataUrl });
+      toast("Profile photo updated", "success");
+    } catch {
+      toast("Could not update the photo", "error");
+    } finally {
+      setSavingPhoto(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const removePhoto = async () => {
+    setSavingPhoto(true);
+    try {
+      await updateAccount({ photoURL: "" });
+      toast("Profile photo removed", "success");
+    } catch {
+      toast("Could not remove the photo", "error");
+    } finally {
+      setSavingPhoto(false);
     }
   };
 
@@ -132,12 +181,43 @@ export default function SettingsPage() {
       <div>
         <SectionTitle title="Profile" />
         <Card className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Avatar name={profile?.name ?? "You"} size={52} />
-            <div className="min-w-0">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="relative shrink-0"
+              aria-label="Change profile photo"
+            >
+              <Avatar name={profile?.name ?? "You"} src={profile?.photoURL} size={64} />
+              <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-brand text-[11px] text-brand-foreground">
+                {savingPhoto ? "…" : "✎"}
+              </span>
+            </button>
+            <div className="min-w-0 flex-1">
               <p className="truncate font-semibold">{profile?.name ?? "You"}</p>
               <p className="truncate text-sm text-foreground/55">{profile?.email}</p>
+              <div className="mt-1.5 flex gap-3 text-xs font-semibold">
+                <button
+                  type="button"
+                  className="text-brand"
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {profile?.photoURL ? "Change photo" : "Upload photo"}
+                </button>
+                {profile?.photoURL && (
+                  <button type="button" className="text-negative" onClick={removePhoto}>
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => pickPhoto(e.target.files?.[0])}
+            />
           </div>
           <FormField label="Display name">
             <div className="flex gap-2">

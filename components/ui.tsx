@@ -282,13 +282,29 @@ export function Avatar({
   name,
   size = 40,
   color,
+  src,
   className,
 }: {
   name: string;
   size?: number;
   color?: string;
+  /** Optional avatar image (URL or data URL). Falls back to initials. */
+  src?: string | null;
   className?: string;
 }) {
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={name}
+        width={size}
+        height={size}
+        className={cn("shrink-0 rounded-full object-cover", className)}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   return (
     <span
       className={cn(

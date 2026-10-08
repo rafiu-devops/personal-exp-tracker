@@ -17,6 +17,8 @@ export interface UserProfile {
   uid: string;
   name: string;
   email: string | null;
+  /** Avatar image: a URL (e.g. Google photo) or an inline data URL. */
+  photoURL?: string;
   currency: string;
   createdAt: number;
   updatedAt: number;

@@ -3,7 +3,8 @@ import react from "@vitejs/plugin-react";
 import path from "node:path";
 
 export default defineConfig({
-  plugins: [react()],
+  // Cast: @vitejs/plugin-react and vitest resolve slightly different Vite types.
+  plugins: [react() as never],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),

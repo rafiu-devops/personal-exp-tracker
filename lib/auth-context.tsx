@@ -34,7 +34,9 @@ interface AuthContextValue {
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
-  updateAccount: (patch: Partial<Pick<UserProfile, "name" | "currency">>) => Promise<void>;
+  updateAccount: (
+    patch: Partial<Pick<UserProfile, "name" | "currency" | "photoURL">>
+  ) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -108,13 +110,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateAccount = useCallback(
-    async (patch: Partial<Pick<UserProfile, "name" | "currency">>) => {
+    async (patch: Partial<Pick<UserProfile, "name" | "currency" | "photoURL">>) => {
       const current = getFirebaseAuth().currentUser;
       if (!current) throw new Error("Not signed in");
       const next: Partial<UserProfile> = { ...patch, updatedAt: Date.now() };
+      if (patch.photoURL === "") {
+        // Allow clearing the avatar.
+        next.photoURL = undefined;
+      }
       await setDoc(doc(getDb(), "users", current.uid), next, { merge: true });
-      if (patch.name) {
-        await updateProfile(current, { displayName: patch.name });
+      if (patch.name || patch.photoURL !== undefined) {
+        await updateProfile(current, {
+          ...(patch.name ? { displayName: patch.name } : {}),
+          ...(patch.photoURL !== undefined ? { photoURL: patch.photoURL || null } : {}),
+        });
       }
       setProfile((prev) => (prev ? { ...prev, ...next } : prev));
     },

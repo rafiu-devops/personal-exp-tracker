@@ -12,6 +12,7 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager,
   type Firestore,
+  type FirestoreSettings,
 } from "firebase/firestore";
 
 export const firebaseConfig: FirebaseOptions = {
@@ -47,18 +48,21 @@ export function getFirebaseAuth(): Auth {
 export function getDb(): Firestore {
   if (!db) {
     const firebaseApp = getFirebaseApp();
-    if (typeof window === "undefined") {
+    const settings: FirestoreSettings = {
+      // Optional fields (groupId, note, phone, email, photoURL, …) are often
+      // undefined. Firestore rejects undefined by default, so ignore them
+      // instead of forcing every caller to strip empty values.
+      ignoreUndefinedProperties: true,
+    };
+    if (typeof window !== "undefined") {
+      settings.localCache = persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      });
+    }
+    try {
+      db = initializeFirestore(firebaseApp, settings);
+    } catch {
       db = getFirestore(firebaseApp);
-    } else {
-      try {
-        db = initializeFirestore(firebaseApp, {
-          localCache: persistentLocalCache({
-            tabManager: persistentMultipleTabManager(),
-          }),
-        });
-      } catch {
-        db = getFirestore(firebaseApp);
-      }
     }
   }
   return db;

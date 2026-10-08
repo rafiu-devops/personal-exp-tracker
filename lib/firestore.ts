@@ -65,6 +65,7 @@ export async function ensureUserProfile(
     uid: user.uid,
     name: user.displayName ?? user.email?.split("@")[0] ?? "You",
     email: user.email ?? null,
+    photoURL: user.photoURL ?? undefined,
     currency: "PKR",
     createdAt: now,
     updatedAt: now,
