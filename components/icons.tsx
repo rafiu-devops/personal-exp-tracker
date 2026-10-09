@@ -125,6 +125,38 @@ export const LogoutIcon = (p: IconProps) => (
   </svg>
 );
 
+export const WalletIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+    <path d="M16 12h2" />
+    <path d="M3 9h16" />
+  </svg>
+);
+
+export const EyeIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+export const EyeOffIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 8 10 8a18.4 18.4 0 0 1-2.16 3.19M6.6 6.6A18.6 18.6 0 0 0 2 12s3.5 8 10 8a9.2 9.2 0 0 0 4.4-1.1" />
+    <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    <path d="M2 2l20 20" />
+  </svg>
+);
+
+export const TransferIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M8 3 4 7l4 4" />
+    <path d="M4 7h16" />
+    <path d="M16 21l4-4-4-4" />
+    <path d="M20 17H4" />
+  </svg>
+);
+
 export const GoogleIcon = (p: IconProps) => (
   <svg viewBox="0 0 24 24" {...p}>
     <path

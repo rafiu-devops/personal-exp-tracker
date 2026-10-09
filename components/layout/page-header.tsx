@@ -2,26 +2,46 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { cn } from "@/lib/cn";
 import { ArrowLeftIcon } from "@/components/icons";
 
 export function PageHeader({
   title,
   subtitle,
   back,
+  leading,
   actions,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   back?: boolean | string;
+  /** Optional slot rendered to the left of the title (e.g. a profile button). */
+  leading?: ReactNode;
   actions?: ReactNode;
 }) {
   const router = useRouter();
   const showBack = Boolean(back);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
+    <header
+      className={cn(
+        "sticky top-0 z-30 transition-colors duration-200",
+        scrolled
+          ? "border-b border-border bg-background/85 backdrop-blur-md"
+          : "border-b border-transparent bg-transparent"
+      )}
+    >
       <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
+        {leading}
         {showBack &&
           (typeof back === "string" ? (
             <Link

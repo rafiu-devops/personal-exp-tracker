@@ -43,7 +43,9 @@ export function ExpenseItem({
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate font-semibold text-foreground">{expense.title}</span>
+          <span className="truncate font-semibold text-foreground">
+            {expense.title?.trim() || category?.name || "Expense"}
+          </span>
           {isShared && (
             <span className="shrink-0 rounded-full bg-brand/10 px-1.5 py-0.5 text-[10px] font-semibold text-brand">
               SHARED

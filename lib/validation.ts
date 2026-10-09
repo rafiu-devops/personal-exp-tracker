@@ -57,17 +57,49 @@ export const splitEntrySchema = z.object({
   value: z.number(),
 });
 
+export const transferSchema = z
+  .object({
+    fromAccountId: z.string().min(1, "Choose a source account"),
+    toAccountId: z.string().min(1, "Choose a destination account"),
+    amount: z.coerce
+      .number({ message: "Enter a valid amount" })
+      .positive("Amount must be greater than 0"),
+    date: z.string().min(1, "Please choose a date"),
+    note: z.string().trim().max(300).optional().or(z.literal("")),
+  })
+  .refine((data) => data.fromAccountId !== data.toAccountId, {
+    path: ["toAccountId"],
+    message: "Source and destination must be different",
+  });
+
+export const accountSchema = z.object({
+  name: z.string().trim().min(1, "Account name is required").max(40),
+  type: z.enum(["cash", "wallet", "savings", "card", "other"]),
+  openingBalance: z.coerce.number().default(0),
+  icon: z.string().trim().min(1).max(8).optional(),
+  color: z.string().trim().min(1).max(20).optional(),
+});
+
+export const incomeSchema = z.object({
+  accountId: z.string().min(1, "Choose an account"),
+  amount: z.coerce
+    .number({ message: "Enter a valid amount" })
+    .positive("Amount must be greater than 0"),
+  date: z.string().min(1, "Please choose a date"),
+  note: z.string().trim().max(300).optional().or(z.literal("")),
+});
+
 export const expenseFormSchema = z
   .object({
     kind: z.enum(["personal", "shared"]),
-    title: z.string().trim().min(1, "Title is required").max(120),
+    title: z.string().trim().max(120).default(""),
     amount: z.coerce
       .number({ message: "Enter a valid amount" })
       .positive("Amount must be greater than 0"),
     categoryId: z.string().min(1, "Please choose a category"),
     date: z.string().min(1, "Please choose a date"),
     note: z.string().trim().max(500).optional().or(z.literal("")),
-    paymentMethod: z.enum(["cash", "card", "other"]).default("cash"),
+    accountId: z.string().optional().or(z.literal("")),
     groupId: z.string().optional().or(z.literal("")),
     payerId: z.string().default(SELF_ID),
     participantIds: z.array(z.string()).default([]),
@@ -117,6 +149,7 @@ export const settlementSchema = z.object({
     .positive("Amount must be greater than 0"),
   date: z.string().min(1, "Please choose a date"),
   note: z.string().trim().max(300).optional().or(z.literal("")),
+  accountId: z.string().optional().or(z.literal("")),
   groupId: z.string().optional().or(z.literal("")),
 });
 
@@ -125,5 +158,8 @@ export type RegisterValues = z.infer<typeof registerSchema>;
 export type PersonValues = z.infer<typeof personSchema>;
 export type GroupValues = z.infer<typeof groupSchema>;
 export type CategoryValues = z.infer<typeof categorySchema>;
+export type TransferValues = z.infer<typeof transferSchema>;
+export type AccountValues = z.infer<typeof accountSchema>;
+export type IncomeValues = z.infer<typeof incomeSchema>;
 export type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
 export type SettlementValues = z.infer<typeof settlementSchema>;

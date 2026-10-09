@@ -28,8 +28,16 @@ export default function ExpenseDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { profile } = useAuth();
-  const { expenses, settlements, groups, resolveCategory, resolveName, deleteExpense, loading } =
-    useData();
+  const {
+    expenses,
+    settlements,
+    groups,
+    resolveCategory,
+    resolveName,
+    resolveAccount,
+    deleteExpense,
+    loading,
+  } = useData();
   const { toast } = useToast();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [preset, setPreset] = useState<SettlementPreset | null>(null);
@@ -67,6 +75,7 @@ export default function ExpenseDetailPage() {
 
   const category = resolveCategory(expense.categoryId);
   const group = groups.find((g) => g.id === expense.groupId);
+  const account = expense.accountId ? resolveAccount(expense.accountId) : undefined;
   const isShared = expense.kind === "shared";
   const payerIsSelf = expense.payerId === SELF_ID;
   const selfSplit = expense.splits.find((s) => s.personId === SELF_ID);
@@ -88,7 +97,7 @@ export default function ExpenseDetailPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title={expense.title}
+        title={expense.title?.trim() || category?.name || "Expense"}
         subtitle={`${category?.icon ?? ""} ${category?.name ?? "Uncategorised"} · ${formatDate(expense.date)}`}
         back="/expenses"
         actions={
@@ -125,9 +134,9 @@ export default function ExpenseDetailPage() {
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
           {isShared ? <Badge tone="brand">Shared</Badge> : <Badge>Personal</Badge>}
           {group && <Badge tone="neutral">{group.name}</Badge>}
-          {expense.paymentMethod && (
-            <Badge tone="neutral" className="capitalize">
-              {expense.paymentMethod}
+          {account && (
+            <Badge tone="neutral">
+              {account.icon} {account.name}
             </Badge>
           )}
         </div>

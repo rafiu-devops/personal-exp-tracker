@@ -20,9 +20,41 @@ import {
 } from "firebase/auth";
 import { deleteField, doc, setDoc } from "firebase/firestore";
 import { getDb, getFirebaseAuth, getGoogleAuthProvider, isFirebaseConfigured } from "./firebase";
-import { ensureUserProfile, stripUndefined } from "./firestore";
+import { ensureUserProfile, profileFromUser, stripUndefined } from "./firestore";
+import { isOnline } from "./online";
 import { friendlyError } from "./errors";
 import type { UserProfile } from "./types";
+
+const PROFILE_CACHE_PREFIX = "mm.profile.";
+
+/** Locally cached profile so the app can render offline before Firestore loads. */
+function readCachedProfile(uid: string): UserProfile | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(PROFILE_CACHE_PREFIX + uid);
+    return raw ? (JSON.parse(raw) as UserProfile) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedProfile(profile: UserProfile) {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(PROFILE_CACHE_PREFIX + profile.uid, JSON.stringify(profile));
+  } catch {
+    // Ignore quota / private-mode failures.
+  }
+}
+
+function clearCachedProfile(uid: string) {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(PROFILE_CACHE_PREFIX + uid);
+  } catch {
+    // Ignore.
+  }
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -49,31 +81,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loadedProfile, setLoadedProfile] = useState(false);
   const configured = isFirebaseConfigured();
 
+  // Loading a profile is best-effort and must never block the app shell, so it
+  // runs independently of the auth state (and never awaits Firestore offline).
+  const loadProfile = useCallback(async (nextUser: User) => {
+    // Offline with a cached profile: keep showing it instead of letting a
+    // network fallback overwrite it with a bare-bones profile.
+    if (!isOnline() && readCachedProfile(nextUser.uid)) {
+      setLoadedProfile(true);
+      return;
+    }
+    try {
+      const p = await ensureUserProfile(nextUser);
+      setProfile(p);
+      writeCachedProfile(p);
+    } catch (error) {
+      console.error("Failed to load profile", error);
+      setProfile((prev) => prev ?? profileFromUser(nextUser));
+    } finally {
+      setLoadedProfile(true);
+    }
+  }, []);
+
   useEffect(() => {
     if (!configured) {
       setLoading(false);
       return;
     }
     const auth = getFirebaseAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       setUser(nextUser);
       if (nextUser) {
-        try {
-          const p = await ensureUserProfile(nextUser);
-          setProfile(p);
-        } catch (error) {
-          console.error("Failed to load profile", error);
-        } finally {
-          setLoadedProfile(true);
-        }
+        // Show a cached profile instantly (works offline), then refresh it.
+        const cached = readCachedProfile(nextUser.uid);
+        if (cached) setProfile(cached);
+        void loadProfile(nextUser);
       } else {
         setProfile(null);
         setLoadedProfile(false);
       }
+      // Auth is resolved — let the UI render instead of waiting on Firestore.
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [configured]);
+  }, [configured, loadProfile]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     await signInWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
@@ -99,6 +149,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOutUser = useCallback(async () => {
+    const current = getFirebaseAuth().currentUser;
+    if (current) clearCachedProfile(current.uid);
     await signOut(getFirebaseAuth());
   }, []);
 
@@ -107,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!current) return;
     const p = await ensureUserProfile(current);
     setProfile(p);
+    writeCachedProfile(p);
   }, []);
 
   const updateAccount = useCallback(
@@ -133,6 +186,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     []
   );
+
+  // Persist the latest profile to the local cache whenever it changes so an
+  // offline reload can show the right name/avatar immediately.
+  useEffect(() => {
+    if (profile) writeCachedProfile(profile);
+  }, [profile]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

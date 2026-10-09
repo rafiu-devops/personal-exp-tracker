@@ -2,16 +2,15 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Money Management — Expense Tracker & Splitter",
-    short_name: "MM",
-    description:
-      "Track daily spending and split shared expenses with friends and groups.",
+    name: "Expencir",
+    short_name: "Expencir",
+    description: "Expencir is your smart expense tracker, designed to help you manage your money, stay organized and achieve your financial goals — effortlessly.",
     start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#0b1020",
-    theme_color: "#4f46e5",
+    background_color: "#14146e",
+    theme_color: "#14146e",
     categories: ["finance", "productivity"],
     icons: [
       {

@@ -8,11 +8,13 @@ import { Button, Card, Chip, FormField, Input, Textarea } from "@/components/ui"
 import { useData } from "@/lib/data-context";
 import { useToast } from "@/components/toast";
 import { friendlyError } from "@/lib/errors";
+import { useOnline } from "@/lib/online";
 
 export default function NewGroupPage() {
   const router = useRouter();
   const { people, addGroup } = useData();
   const { toast } = useToast();
+  const online = useOnline();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [memberIds, setMemberIds] = useState<string[]>([]);
@@ -32,7 +34,7 @@ export default function NewGroupPage() {
     try {
       const id = await addGroup({ name: name.trim(), description, memberIds });
       toast("Group created", "success");
-      router.push(`/groups/${id}`);
+      router.push(online ? `/groups/${id}` : "/groups");
     } catch (error) {
       toast(friendlyError(error), "error");
       setSaving(false);

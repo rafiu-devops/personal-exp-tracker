@@ -13,6 +13,49 @@ export type ExpenseKind = "personal" | "shared";
 export type ExpenseStatus = "active" | "settled";
 export type PaymentMethod = "cash" | "card" | "other";
 
+/** The kind of money container an account represents. */
+export type AccountType = "cash" | "wallet" | "savings" | "card" | "other";
+
+/**
+ * A money container (cash in hand, mobile wallet, savings, debit/credit card).
+ * Its live balance = openingBalance + income + received settlements - expenses.
+ */
+export interface Account {
+  id: string;
+  name: string;
+  type: AccountType;
+  /** Balance the account started with, before any tracked activity. */
+  openingBalance: number;
+  icon: string;
+  color: string;
+  archived: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** Money added to an account (salary, top-up, transfer in, …). */
+export interface Income {
+  id: string;
+  accountId: string;
+  amount: number;
+  /** ISO date string (yyyy-MM-dd). */
+  date: string;
+  note?: string;
+  createdAt: number;
+}
+
+/** Money moved between two of the user's own accounts (e.g. card → wallet). */
+export interface Transfer {
+  id: string;
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  /** ISO date string (yyyy-MM-dd). */
+  date: string;
+  note?: string;
+  createdAt: number;
+}
+
 export interface UserProfile {
   uid: string;
   name: string;
@@ -73,7 +116,10 @@ export interface Expense {
   /** ISO date string (yyyy-MM-dd) of the expense. */
   date: string;
   note?: string;
+  /** @deprecated kept for older records; new expenses use `accountId`. */
   paymentMethod?: PaymentMethod;
+  /** Account the money left from. */
+  accountId?: string;
   /** Person id of the payer, or SELF_ID. Only for shared expenses. */
   payerId: string;
   /** Person ids participating, including SELF_ID when applicable. */
@@ -96,6 +142,8 @@ export interface Settlement {
   /** ISO date string (yyyy-MM-dd). */
   date: string;
   note?: string;
+  /** Account the money moved through (when the user is a party). */
+  accountId?: string;
   createdAt: number;
 }
 

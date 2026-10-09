@@ -309,7 +309,7 @@ export default function SettingsPage() {
       </div>
 
       <p className="pt-2 text-center text-xs text-foreground/40">
-        Money Management · v1.0 · Made for quick daily tracking
+        Expencir · v1.0 · Smart Expense Tracker
       </p>
 
       {/* Category form */}

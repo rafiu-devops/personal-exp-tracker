@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Orbitron } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
@@ -14,31 +14,33 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const orbitron = Orbitron({
+  variable: "--font-orbitron",
+  subsets: ["latin"],
+  weight: ["800", "900"],
+});
+
 export const metadata: Metadata = {
-  title: {
-    default: "Money Management — Expense Tracker & Splitter",
-    template: "%s · MM",
+  title: "Expencir — Smart Expense Tracker",
+  description: "Expencir is your smart expense tracker, designed to help you manage your money, stay organized and achieve your financial goals — effortlessly.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
-  description:
-    "Track daily spending and split shared expenses with friends and groups. Installable on your phone.",
-  applicationName: "Money Management",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "MM",
-  },
-  formatDetection: { telephone: false },
+  appleWebApp: { capable: true, title: "Expencir", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
+  themeColor: "#14146e",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f7fb" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b1020" },
-  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -46,7 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         <Providers>{children}</Providers>

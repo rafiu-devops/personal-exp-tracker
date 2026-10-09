@@ -40,7 +40,7 @@ export function InstallApp() {
         <div>
           <p className="font-semibold">App installed</p>
           <p className="text-sm text-foreground/55">
-            Money Management is running as an installed app.
+            Expencir is running as an installed app.
           </p>
         </div>
       </Card>
@@ -54,7 +54,7 @@ export function InstallApp() {
         <div>
           <p className="font-semibold">Install on your phone</p>
           <p className="text-sm text-foreground/55">
-            Use MM like a native app — full screen, with an icon on your home screen.
+            Use Expencir like a native app — full screen, with an icon on your home screen.
           </p>
         </div>
       </div>
@@ -67,7 +67,7 @@ export function InstallApp() {
             setDeferred(null);
           }}
         >
-          Add to Home Screen
+          Install App
         </Button>
       ) : isIOS ? (
         <p className="rounded-xl bg-surface-muted px-3 py-2 text-sm text-foreground/70">

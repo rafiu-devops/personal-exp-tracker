@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocFromCache,
   setDoc,
   writeBatch,
   type Firestore,
@@ -10,6 +11,8 @@ import {
 import type { User } from "firebase/auth";
 import { getDb } from "./firebase";
 import { DEFAULT_CATEGORIES } from "./categories";
+import { DEFAULT_ACCOUNTS } from "./accounts";
+import { isOnline } from "./online";
 import type { UserProfile } from "./types";
 
 export type CollectionName =
@@ -18,6 +21,9 @@ export type CollectionName =
   | "groups"
   | "expenses"
   | "settlements"
+  | "accounts"
+  | "incomes"
+  | "transfers"
   | "budgets";
 
 export function userCollection(uid: string, name: CollectionName) {
@@ -48,16 +54,43 @@ export function stripUndefined<T extends object>(data: T): T {
   ) as T;
 }
 
+/** Build a provisional profile straight from the auth user (no network). */
+export function profileFromUser(user: User): UserProfile {
+  const now = Date.now();
+  return {
+    uid: user.uid,
+    name: user.displayName ?? user.email?.split("@")[0] ?? "You",
+    email: user.email ?? null,
+    photoURL: user.photoURL ?? undefined,
+    currency: "PKR",
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 /**
  * Make sure a profile document exists for the signed-in user, and seed the
- * default categories on first login.
+ * default categories and accounts on first login.
+ *
+ * This is offline-first: when the device is offline we read from Firestore's
+ * persistent cache (never issuing a network read that would hang) and never
+ * await a write, so the app can boot from a saved session without a connection.
  */
 export async function ensureUserProfile(
   user: User,
   db: Firestore = getDb()
 ): Promise<UserProfile> {
   const ref = doc(db, "users", user.uid);
-  const snap = await getDoc(ref);
+  const online = isOnline();
+
+  let snap;
+  try {
+    snap = online ? await getDoc(ref) : await getDocFromCache(ref);
+  } catch {
+    // Offline cache miss, or a network hiccup while online. Fall back to what
+    // we can derive locally so the UI never blocks.
+    return profileFromUser(user);
+  }
 
   if (snap.exists()) {
     const existing = snap.data() as UserProfile;
@@ -67,28 +100,39 @@ export async function ensureUserProfile(
       email: user.email ?? existing.email ?? null,
       updatedAt: Date.now(),
     };
-    await setDoc(ref, stripUndefined(updated), { merge: true });
+    if (online) {
+      // Fire-and-forget: a slow network must never block rendering.
+      void setDoc(ref, stripUndefined(updated), { merge: true }).catch(() => {});
+    }
     return updated;
   }
 
-  const now = Date.now();
-  const profile: UserProfile = {
-    uid: user.uid,
-    name: user.displayName ?? user.email?.split("@")[0] ?? "You",
-    email: user.email ?? null,
-    photoURL: user.photoURL ?? undefined,
-    currency: "PKR",
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  const batch = writeBatch(db);
-  batch.set(ref, stripUndefined(profile));
-  for (const category of DEFAULT_CATEGORIES) {
-    const categoryRef = doc(collection(db, "users", user.uid, "categories"));
-    batch.set(categoryRef, stripUndefined({ ...category, createdAt: now }));
+  const profile = profileFromUser(user);
+  if (online) {
+    try {
+      const batch = writeBatch(db);
+      batch.set(ref, stripUndefined(profile));
+      for (const category of DEFAULT_CATEGORIES) {
+        const categoryRef = doc(collection(db, "users", user.uid, "categories"));
+        batch.set(categoryRef, stripUndefined({ ...category, createdAt: profile.createdAt }));
+      }
+      for (const account of DEFAULT_ACCOUNTS) {
+        const accountRef = doc(collection(db, "users", user.uid, "accounts"));
+        batch.set(
+          accountRef,
+          stripUndefined({
+            ...account,
+            createdAt: profile.createdAt,
+            updatedAt: profile.createdAt,
+          })
+        );
+      }
+      await batch.commit();
+    } catch {
+      // Ignore — the local cache still has the provisional profile and will
+      // sync once a connection is available.
+    }
   }
-  await batch.commit();
 
   return profile;
 }

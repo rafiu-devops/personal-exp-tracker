@@ -29,7 +29,7 @@ export function SettlementSheet({
   onSaved?: () => void;
 }) {
   const { profile } = useAuth();
-  const { people, addSettlement, resolveName } = useData();
+  const { people, accounts, addSettlement, resolveName } = useData();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [fromPersonId, setFromPersonId] = useState(SELF_ID);
@@ -37,8 +37,10 @@ export function SettlementSheet({
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
+  const [accountId, setAccountId] = useState("");
 
   const selfName = profile?.name ?? "You";
+  const touchesSelf = fromPersonId === SELF_ID || toPersonId === SELF_ID;
 
   useEffect(() => {
     if (!open) return;
@@ -58,6 +60,8 @@ export function SettlementSheet({
     }
     setDate(todayISO());
     setNote("");
+    setAccountId(accounts[0]?.id ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, preset, people]);
 
   const save = async () => {
@@ -78,6 +82,7 @@ export function SettlementSheet({
         amount: value,
         date,
         note,
+        accountId: touchesSelf ? accountId : "",
         groupId: groupId ?? "",
       });
       toast("Settlement recorded", "success");
@@ -162,6 +167,20 @@ export function SettlementSheet({
         <FormField label="Date">
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </FormField>
+
+        {touchesSelf && accounts.length > 0 && (
+          <FormField
+            label={fromPersonId === SELF_ID ? "Paid from account" : "Received into account"}
+          >
+            <Select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.icon} {account.name}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+        )}
 
         <FormField label="Note (optional)">
           <Textarea

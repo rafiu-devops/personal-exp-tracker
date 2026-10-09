@@ -21,6 +21,7 @@ import { useData } from "@/lib/data-context";
 import { useToast } from "@/components/toast";
 import { friendlyError } from "@/lib/errors";
 import { todayISO } from "@/lib/format";
+import { useOnline } from "@/lib/online";
 import { SELF_ID } from "@/lib/types";
 import { expenseFormSchema, type ExpenseFormValues } from "@/lib/validation";
 import type { Expense } from "@/lib/types";
@@ -36,8 +37,9 @@ export function ExpenseForm({
 }) {
   const router = useRouter();
   const { profile } = useAuth();
-  const { categories, people, groups, addExpense, updateExpense } = useData();
+  const { categories, people, groups, accounts, addExpense, updateExpense } = useData();
   const { toast } = useToast();
+  const online = useOnline();
   const [saving, setSaving] = useState(false);
 
   const defaultValues = useMemo<ExpenseFormValues>(
@@ -48,7 +50,7 @@ export function ExpenseForm({
       categoryId: initial?.categoryId ?? "",
       date: initial?.date ?? todayISO(),
       note: initial?.note ?? "",
-      paymentMethod: initial?.paymentMethod ?? "cash",
+      accountId: initial?.accountId ?? "",
       groupId: initial?.groupId ?? defaultGroupId,
       payerId: initial?.payerId ?? SELF_ID,
       participantIds:
@@ -75,6 +77,7 @@ export function ExpenseForm({
 
   const kind = watch("kind");
   const categoryId = watch("categoryId");
+  const accountId = watch("accountId");
   const payerId = watch("payerId");
   const participantIds = watch("participantIds") ?? [];
   const splitType = watch("splitType");
@@ -87,6 +90,12 @@ export function ExpenseForm({
     }
   }, [categoryId, categories, setValue]);
 
+  useEffect(() => {
+    if (!accountId && accounts.length > 0) {
+      setValue("accountId", accounts[0].id, { shouldValidate: false });
+    }
+  }, [accountId, accounts, setValue]);
+
   const onSubmit = async (values: ExpenseFormValues) => {
     setSaving(true);
     try {
@@ -97,7 +106,8 @@ export function ExpenseForm({
       } else {
         const id = await addExpense(values);
         toast("Expense saved", "success");
-        router.push(`/expenses/${id}`);
+        // Offline, dynamic routes can't be fetched — go to the (prefetched) list.
+        router.push(online ? `/expenses/${id}` : "/expenses");
       }
       router.refresh();
     } catch (error) {
@@ -157,7 +167,7 @@ export function ExpenseForm({
           </div>
         </FormField>
 
-        <FormField label="Title" error={errors.title?.message}>
+        <FormField label="Title (optional)" error={errors.title?.message}>
           <Input placeholder="e.g. Dinner with friends" {...register("title")} />
         </FormField>
 
@@ -172,11 +182,14 @@ export function ExpenseForm({
           <FormField label="Date" error={errors.date?.message}>
             <Input type="date" {...register("date")} />
           </FormField>
-          <FormField label="Payment">
-            <Select {...register("paymentMethod")}>
-              <option value="cash">Cash</option>
-              <option value="card">Card</option>
-              <option value="other">Other</option>
+          <FormField label="Account">
+            <Select {...register("accountId")}>
+              <option value="">Unassigned</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.icon} {account.name}
+                </option>
+              ))}
             </Select>
           </FormField>
         </div>

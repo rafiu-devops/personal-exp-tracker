@@ -1,8 +1,8 @@
-/* Money Management PWA service worker
+/* Expencir PWA service worker
  * Caches the app shell and static assets so the app opens offline.
  * Live data is handled by Firestore's own offline persistence.
  */
-const VERSION = "mm-v1";
+const VERSION = "expencir-v2";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const OFFLINE_URL = "/offline";
@@ -15,6 +15,7 @@ const PRECACHE = [
   "/icons/icon-512.png",
   "/icons/maskable-192.png",
   "/icons/maskable-512.png",
+  "/logo-emblem-white.svg",
 ];
 
 self.addEventListener("install", (event) => {

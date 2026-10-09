@@ -279,7 +279,9 @@ export default function PeoplePage() {
                       >
                         <span className="text-lg">🧾</span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{tx.expense.title}</p>
+                          <p className="truncate text-sm font-medium">
+                            {tx.expense.title?.trim() || "Expense"}
+                          </p>
                           <p className="text-xs text-foreground/50">
                             {tx.expense.payerId === SELF_ID
                               ? `You paid · ${formatDate(tx.expense.date)}`

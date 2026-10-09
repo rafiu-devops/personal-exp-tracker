@@ -1,26 +1,29 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { Spinner } from "@/components/ui";
+import { ExpencirSplashScreen } from "@/components/splash-screen";
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [animationFinished, setAnimationFinished] = useState(false);
+
+  const handleSplashComplete = useCallback(() => {
+    setAnimationFinished(true);
+  }, []);
 
   useEffect(() => {
-    if (loading) return;
-    router.replace(user ? "/dashboard" : "/login");
-  }, [user, loading, router]);
+    // Wait until both the splash screen animation completes and auth state loading is finished
+    if (animationFinished && !loading) {
+      router.replace(user ? "/dashboard" : "/login");
+    }
+  }, [animationFinished, loading, user, router]);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-3">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand text-2xl font-bold text-brand-foreground">
-        ₹
-      </div>
-      <Spinner className="h-5 w-5 text-brand" />
-      <p className="text-sm text-foreground/50">Loading Money Management…</p>
-    </div>
+    <main className="relative min-h-dvh bg-[#0B1020]">
+      <ExpencirSplashScreen onComplete={handleSplashComplete} />
+    </main>
   );
 }

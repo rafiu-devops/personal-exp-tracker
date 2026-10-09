@@ -9,10 +9,12 @@ import { GoogleIcon } from "@/components/icons";
 import { friendlyError, useAuth } from "@/lib/auth-context";
 import { loginSchema, type LoginValues } from "@/lib/validation";
 import { useToast } from "@/components/toast";
+import { useOnline } from "@/lib/online";
 
 export default function LoginPage() {
   const { signIn, signInWithGoogle } = useAuth();
   const { toast } = useToast();
+  const online = useOnline();
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -50,6 +52,12 @@ export default function LoginPage() {
 
   return (
     <Card className="space-y-5">
+      {!online && (
+        <div className="rounded-2xl bg-amber-500/15 px-3.5 py-2.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+          You&apos;re offline. If you have a saved session you&apos;ll be taken straight
+          in; otherwise connect to sign in.
+        </div>
+      )}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <FormField label="Email" error={errors.email?.message}>
           <Input
