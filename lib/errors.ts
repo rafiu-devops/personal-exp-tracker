@@ -20,7 +20,9 @@ export function friendlyError(error: unknown): string {
     "auth/network-request-failed": "Network error. Check your connection.",
     "auth/too-many-requests": "Too many attempts. Please try again later.",
     "auth/operation-not-allowed":
-      "This sign-in method is not enabled in Firebase.",
+      "This sign-in method is not enabled in Firebase. Enable Google in Firebase Console > Authentication > Sign-in method.",
+    "auth/unauthorized-domain":
+      "This domain is not authorized in Firebase. Add your deployed domain in Firebase Console > Authentication > Settings > Authorized Domains.",
     "permission-denied": "You don't have permission to do that.",
     unavailable: "You appear to be offline. Changes will sync when you reconnect.",
   };

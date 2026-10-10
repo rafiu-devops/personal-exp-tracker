@@ -309,7 +309,7 @@ export default function SettingsPage() {
       </div>
 
       <p className="pt-2 text-center text-xs text-foreground/40">
-        Expencir · v1.0 · Smart Expense Tracker
+        Expenza · v1.0 · Smart Expense Tracker
       </p>
 
       {/* Category form */}

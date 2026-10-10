@@ -21,8 +21,8 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: "Expencir — Smart Expense Tracker",
-  description: "Expencir is your smart expense tracker, designed to help you manage your money, stay organized and achieve your financial goals — effortlessly.",
+  title: "Expenza — Smart Expense Tracker",
+  description: "Expenza is your smart expense tracker, designed to help you manage your money, stay organized and achieve your financial goals — effortlessly.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -32,11 +32,11 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
-  appleWebApp: { capable: true, title: "Expencir", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Expenza", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#14146e",
+  themeColor: "#6366f1",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { ExpencirSplashScreen } from "@/components/splash-screen";
+import { ExpenzaSplashScreen } from "@/components/splash-screen";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -22,8 +22,14 @@ export default function Home() {
   }, [animationFinished, loading, user, router]);
 
   return (
-    <main className="relative min-h-dvh bg-[#0B1020]">
-      <ExpencirSplashScreen onComplete={handleSplashComplete} />
+    <main
+      className="relative min-h-dvh"
+      style={{
+        background:
+          "radial-gradient(circle at 50% 35%, #818cf8 0%, #6366f1 45%, #4f46e5 100%)",
+      }}
+    >
+      <ExpenzaSplashScreen onComplete={handleSplashComplete} />
     </main>
   );
 }

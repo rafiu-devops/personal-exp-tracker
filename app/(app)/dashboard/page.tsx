@@ -20,11 +20,10 @@ import { EyeIcon, EyeOffIcon, GroupIcon, PlusIcon, UsersIcon } from "@/component
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
 import { useBalanceVisibility } from "@/lib/balance-visibility";
-import { computeAccountBalances, monthBudget, totalAccountBalance } from "@/lib/accounts";
+import { computeAccountBalances, totalAccountBalance } from "@/lib/accounts";
 import { computeSelfBalances } from "@/lib/balances";
 import { categoryBreakdown, dashboardTotals, recentExpenses } from "@/lib/selectors";
-import { currentMonthKey, formatMoney } from "@/lib/format";
-import { startOfMonthISO } from "@/lib/format";
+import { formatMoney, startOfMonthISO } from "@/lib/format";
 
 export default function DashboardPage() {
   const { profile } = useAuth();
@@ -45,10 +44,6 @@ export default function DashboardPage() {
     [accounts, expenses, settlements, incomes, transfers]
   );
   const netWorth = useMemo(() => totalAccountBalance(accountBalances), [accountBalances]);
-  const budget = useMemo(
-    () => monthBudget(accounts, expenses, incomes, currentMonthKey()),
-    [accounts, expenses, incomes]
-  );
   const balanceById = useMemo(
     () => new Map(accountBalances.map((b) => [b.accountId, b.balance])),
     [accountBalances]
@@ -144,20 +139,6 @@ export default function DashboardPage() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {budget.overspent.length > 0 && (
-              <Link
-                href="/accounts"
-                className="block rounded-xl border border-negative/30 bg-negative/10 px-3 py-2.5"
-              >
-                <p className="text-sm font-semibold text-negative">
-                  Settle your this month budget
-                </p>
-                <p className="mt-0.5 text-xs text-negative/80">
-                  Overspent by {hidden ? "••••" : formatMoney(-budget.totalBalance, currency)} this
-                  month. Add income to cover it.
-                </p>
-              </Link>
-            )}
             <Card className="divide-y divide-border p-0">
               {accounts.map((account) => (
                 <Link

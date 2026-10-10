@@ -40,7 +40,7 @@ export function InstallApp() {
         <div>
           <p className="font-semibold">App installed</p>
           <p className="text-sm text-foreground/55">
-            Expencir is running as an installed app.
+            Expenza is running as an installed app.
           </p>
         </div>
       </Card>
@@ -54,7 +54,7 @@ export function InstallApp() {
         <div>
           <p className="font-semibold">Install on your phone</p>
           <p className="text-sm text-foreground/55">
-            Use Expencir like a native app — full screen, with an icon on your home screen.
+            Use Expenza like a native app — full screen, with an icon on your home screen.
           </p>
         </div>
       </div>

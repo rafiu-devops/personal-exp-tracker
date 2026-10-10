@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { EXPENCIR_BRAND } from "@/lib/theme";
+import { EXPENZA_BRAND } from "@/lib/theme";
 
 interface SplashScreenProps {
   onComplete?: () => void;
@@ -12,7 +12,7 @@ interface SplashScreenProps {
 /* ------------------------------------------------------------------ */
 /*  Tuning knobs (seconds unless noted)                                */
 /* ------------------------------------------------------------------ */
-const STORAGE_KEY = "expencir_splash_shown";
+const STORAGE_KEY = "expenza_splash_shown";
 const EMBLEM_SIZE = 176; // px
 const BLADE_COUNT = 6;
 
@@ -68,7 +68,7 @@ function WheelBlades({ animated }: { animated: boolean }) {
 /* ------------------------------------------------------------------ */
 /*  Splash                                                             */
 /* ------------------------------------------------------------------ */
-export function ExpencirSplashScreen({
+export function ExpenzaSplashScreen({
   onComplete,
   forceShow = false,
 }: SplashScreenProps) {
@@ -109,11 +109,11 @@ export function ExpencirSplashScreen({
     <AnimatePresence onExitComplete={() => onCompleteRef.current?.()}>
       {visible && (
         <motion.div
-          key="expencir-splash"
+          key="expenza-splash"
           className="fixed inset-0 z-[9999] flex select-none flex-col items-center justify-center overflow-hidden"
           style={{
             background:
-              "radial-gradient(circle at 50% 45%, #2a2ab8 0%, #14146e 45%, #090930 100%)",
+              "radial-gradient(circle at 50% 35%, #818cf8 0%, #6366f1 45%, #4f46e5 100%)",
           }}
           exit={{ opacity: 0, transition: { duration: 0.5, ease: "easeOut" } }}
         >
@@ -121,13 +121,13 @@ export function ExpencirSplashScreen({
             <>
               {/* corner accents, appear with the final composition */}
               <motion.div
-                className="absolute right-0 top-0 h-96 w-96 -translate-y-20 translate-x-20 bg-gradient-to-bl from-indigo-400/10 to-transparent blur-2xl"
+                className="absolute right-0 top-0 h-96 w-96 -translate-y-20 translate-x-20 bg-gradient-to-bl from-white/20 to-transparent blur-2xl"
                 initial={full ? { opacity: 0 } : false}
                 animate={{ opacity: 1 }}
                 transition={{ delay: full ? WORDMARK_DELAY : 0, duration: 1 }}
               />
               <motion.div
-                className="absolute bottom-0 left-0 h-80 w-80 -translate-x-16 translate-y-16 rounded-full bg-gradient-to-tr from-indigo-500/15 via-indigo-600/5 to-transparent blur-3xl"
+                className="absolute bottom-0 left-0 h-80 w-80 -translate-x-16 translate-y-16 rounded-full bg-gradient-to-tr from-white/15 via-white/5 to-transparent blur-3xl"
                 initial={full ? { opacity: 0 } : false}
                 animate={{ opacity: 1 }}
                 transition={{ delay: full ? WORDMARK_DELAY : 0, duration: 1 }}
@@ -147,7 +147,7 @@ export function ExpencirSplashScreen({
                         style={{
                           inset: -90,
                           background:
-                            "radial-gradient(circle, rgba(129,140,248,.55) 0%, rgba(99,102,241,.18) 45%, transparent 70%)",
+                            "radial-gradient(circle, rgba(255,255,255,.45) 0%, rgba(224,231,255,.25) 45%, transparent 70%)",
                         }}
                         initial={{ opacity: 0, scale: 0.4 }}
                         animate={{ opacity: [0, 1, 0.7], scale: [0.4, 1.15, 1] }}
@@ -160,7 +160,7 @@ export function ExpencirSplashScreen({
                         style={{
                           inset: -40,
                           background:
-                            "conic-gradient(from 0deg, transparent 0deg, rgba(165,180,252,.65) 70deg, transparent 150deg)",
+                            "conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,.65) 70deg, transparent 150deg)",
                           filter: "blur(16px)",
                         }}
                         initial={{ opacity: 0, rotate: 0 }}
@@ -172,7 +172,7 @@ export function ExpencirSplashScreen({
                       {[0, 1].map((i) => (
                         <motion.div
                           key={i}
-                          className="absolute inset-0 rounded-full border border-indigo-200/40"
+                          className="absolute inset-0 rounded-full border border-white/40"
                           initial={{ opacity: 0, scale: 1 }}
                           animate={{ opacity: [0, 0.55, 0], scale: [1, 1.6, 2.2] }}
                           transition={{
@@ -220,25 +220,25 @@ export function ExpencirSplashScreen({
                       letterSpacing: "0.3em",
                       paddingLeft: "0.3em", // balances trailing letter-spacing
                       textShadow:
-                        "0 0 25px rgba(255,255,255,.4), 0 0 50px rgba(99,102,241,.5)",
+                        "0 0 25px rgba(255,255,255,.5), 0 0 45px rgba(79,70,229,.4)",
                     }}
                     initial={full ? { opacity: 0, y: 16 } : false}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: full ? WORDMARK_DELAY : 0, duration: 0.7, ease: EASE_OUT }}
                   >
                     <span className="inline-block" style={{ transform: "skewX(-10deg)" }}>
-                      {EXPENCIR_BRAND.wordmark}
+                      {EXPENZA_BRAND.wordmark}
                     </span>
                   </motion.h1>
 
                   <motion.p
-                    className="mt-3 text-xs font-medium uppercase text-indigo-200/80 sm:text-sm"
+                    className="mt-3 text-xs font-semibold uppercase text-white/95 sm:text-sm"
                     style={{ letterSpacing: "0.35em", paddingLeft: "0.35em" }}
                     initial={full ? { opacity: 0, y: 8 } : false}
-                    animate={{ opacity: 0.85, y: 0 }}
+                    animate={{ opacity: 0.95, y: 0 }}
                     transition={{ delay: full ? TAGLINE_DELAY : 0, duration: 0.6, ease: EASE_OUT }}
                   >
-                    {EXPENCIR_BRAND.tagline}
+                    {EXPENZA_BRAND.tagline}
                   </motion.p>
                 </div>
               </div>
@@ -249,3 +249,5 @@ export function ExpencirSplashScreen({
     </AnimatePresence>
   );
 }
+
+export const ExpencirSplashScreen = ExpenzaSplashScreen;

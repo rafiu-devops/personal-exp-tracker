@@ -90,7 +90,7 @@ export function computeAccountBalances(
   accounts: Account[],
   expenses: Expense[],
   settlements: Settlement[],
-  incomes: Income[],
+  incomes: Income[] = [],
   transfers: Transfer[] = []
 ): AccountBalance[] {
   const map = new Map<string, AccountBalance>();

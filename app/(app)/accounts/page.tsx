@@ -34,10 +34,9 @@ import {
   DEFAULT_ACCOUNTS,
   accountTypeMeta,
   computeAccountBalances,
-  monthBudget,
   totalAccountBalance,
 } from "@/lib/accounts";
-import { currentMonthKey, formatDate, formatMoney, todayISO } from "@/lib/format";
+import { formatDate, formatMoney, todayISO } from "@/lib/format";
 import type { Account, AccountType } from "@/lib/types";
 
 const ICON_CHOICES = ["💵", "👛", "🏦", "💳", "💰", "🪙", "📱", "🏧", "🧾", "🎁"];
@@ -54,8 +53,6 @@ export default function AccountsPage() {
     addAccount,
     updateAccount,
     deleteAccount,
-    addIncome,
-    deleteIncome,
     addTransfer,
     deleteTransfer,
   } = useData();
@@ -75,14 +72,6 @@ export default function AccountsPage() {
 
   const accountById = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts]);
 
-  const budget = useMemo(
-    () => monthBudget(accounts, expenses, incomes, currentMonthKey()),
-    [accounts, expenses, incomes]
-  );
-  const monthLabel = new Date(`${budget.month}-01T00:00:00`).toLocaleString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
   const accountName = useCallback(
     (id: string) => accountById.get(id)?.name ?? "Account",
     [accountById]
@@ -100,13 +89,6 @@ export default function AccountsPage() {
   const [detail, setDetail] = useState<Account | null>(null);
   const [confirm, setConfirm] = useState<Account | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  const [incomeOpen, setIncomeOpen] = useState(false);
-  const [incomeAccountId, setIncomeAccountId] = useState("");
-  const [incomeAmount, setIncomeAmount] = useState("");
-  const [incomeDate, setIncomeDate] = useState(todayISO());
-  const [incomeNote, setIncomeNote] = useState("");
-  const [savingIncome, setSavingIncome] = useState(false);
 
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferFrom, setTransferFrom] = useState("");
@@ -194,36 +176,6 @@ export default function AccountsPage() {
     }
   };
 
-  const openIncome = (accountId: string) => {
-    setIncomeAccountId(accountId);
-    setIncomeAmount("");
-    setIncomeDate(todayISO());
-    setIncomeNote("");
-    setIncomeOpen(true);
-  };
-
-  const saveIncome = async () => {
-    const amount = Math.round(Number(incomeAmount));
-    if (!incomeAccountId) {
-      toast("Choose an account", "error");
-      return;
-    }
-    if (!Number.isFinite(amount) || amount <= 0) {
-      toast("Enter an amount greater than 0", "error");
-      return;
-    }
-    setSavingIncome(true);
-    try {
-      await addIncome({ accountId: incomeAccountId, amount, date: incomeDate, note: incomeNote });
-      toast("Income added", "success");
-      setIncomeOpen(false);
-    } catch (error) {
-      toast(friendlyError(error), "error");
-    } finally {
-      setSavingIncome(false);
-    }
-  };
-
   const openTransfer = (fromAccountId?: string) => {
     const source = fromAccountId || accounts[0]?.id || "";
     const target = accounts.find((a) => a.id !== source)?.id || source;
@@ -291,15 +243,6 @@ export default function AccountsPage() {
       amount: number;
       tone?: "positive" | "negative" | "neutral";
     }> = [];
-    for (const income of incomes) {
-      if (income.accountId !== detail.id) continue;
-      rows.push({
-        key: `i-${income.id}`,
-        date: income.date,
-        label: income.note?.trim() || "Income",
-        amount: income.amount,
-      });
-    }
     for (const expense of expenses) {
       if (expense.accountId !== detail.id || expense.payerId !== "self") continue;
       rows.push({
@@ -395,108 +338,6 @@ export default function AccountsPage() {
         </div>
       </Card>
 
-      {accounts.length > 0 && (
-        <Card
-          className={budget.overspent.length > 0 ? "border border-negative/40 bg-negative/5" : ""}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-semibold">{monthLabel} budget</p>
-              <p className="text-[11px] text-foreground/45">
-                Income set this month minus what you spent
-              </p>
-            </div>
-            <p
-              className={
-                "shrink-0 text-sm font-semibold tabular-nums " +
-                (budget.totalBalance < 0 ? "text-negative" : "text-positive")
-              }
-            >
-              {hidden
-                ? "••••"
-                : budget.totalBalance < 0
-                  ? `−${formatMoney(-budget.totalBalance, currency)}`
-                  : `${formatMoney(budget.totalBalance, currency)} left`}
-            </p>
-          </div>
-
-          {budget.overspent.length > 0 && (
-            <div className="mt-3 rounded-xl border border-negative/30 bg-negative/10 p-3">
-              <p className="text-sm font-semibold text-negative">
-                Settle your this month budget
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-negative/80">
-                {budget.overspent
-                  .map(
-                    (entry) =>
-                      `${accountName(entry.accountId)} overspent by ${formatMoney(
-                        -entry.balance,
-                        currency
-                      )}`
-                  )
-                  .join(" · ")}
-                . Your budget went into the minus — add income to cover it.
-              </p>
-              <Button
-                size="sm"
-                className="mt-2"
-                onClick={() => openIncome(budget.overspent[0].accountId)}
-              >
-                Add income to settle
-              </Button>
-            </div>
-          )}
-
-          <div className="mt-3 space-y-3">
-            {budget.entries
-              .filter((entry) => entry.income > 0 || entry.spent > 0)
-              .map((entry) => {
-                const account = accountById.get(entry.accountId);
-                if (!account) return null;
-                const ratio = entry.income > 0 ? Math.min(entry.spent / entry.income, 1) : 1;
-                return (
-                  <div key={entry.accountId}>
-                    <div className="flex items-center justify-between gap-2 text-xs">
-                      <span className="truncate font-medium">
-                        {account.icon} {account.name}
-                      </span>
-                      <span
-                        className={
-                          "shrink-0 tabular-nums " +
-                          (entry.balance < 0
-                            ? "font-semibold text-negative"
-                            : "text-foreground/60")
-                        }
-                      >
-                        {hidden
-                          ? "••"
-                          : `${formatMoney(entry.spent, currency)} / ${formatMoney(
-                              entry.income,
-                              currency
-                            )}`}
-                      </span>
-                    </div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-muted">
-                      <div
-                        className={
-                          "h-full rounded-full " +
-                          (entry.balance < 0 ? "bg-negative" : "bg-brand")
-                        }
-                        style={{ width: `${Math.max(ratio * 100, entry.spent > 0 ? 4 : 0)}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            {budget.entries.every((entry) => entry.income === 0 && entry.spent === 0) && (
-              <p className="text-sm text-foreground/55">
-                No income or spending recorded for {monthLabel} yet.
-              </p>
-            )}
-          </div>
-        </Card>
-      )}
-
       {accounts.length === 0 ? (
         <EmptyState
           icon="💳"
@@ -534,11 +375,9 @@ export default function AccountsPage() {
                   <p className="font-semibold tabular-nums">
                     {hidden ? "••••" : formatMoney(bucket?.balance ?? 0, currency)}
                   </p>
-                  {bucket && bucket.income > 0 && (
-                    <p className="text-[11px] text-positive">
-                      {hidden ? "••" : `+${formatMoney(bucket.income, currency)}`}
-                    </p>
-                  )}
+                  <p className="text-[11px] text-foreground/45">
+                    Open: {formatMoney(account.openingBalance, currency)}
+                  </p>
                 </div>
               </button>
             );
@@ -646,9 +485,6 @@ export default function AccountsPage() {
               <Button variant="secondary" fullWidth onClick={() => openEdit(detail)}>
                 <EditIcon className="h-4 w-4" /> Edit
               </Button>
-              <Button variant="soft" fullWidth onClick={() => openIncome(detail.id)}>
-                <PlusIcon className="h-4 w-4" /> Income
-              </Button>
               {accounts.length > 1 && (
                 <Button
                   variant="soft"
@@ -674,9 +510,6 @@ export default function AccountsPage() {
               </p>
               <div className="mt-2 flex flex-wrap justify-center gap-2 text-xs">
                 <Badge tone="neutral">Opening {formatMoney(detail.openingBalance, currency)}</Badge>
-                <Badge tone="positive">
-                  Income {formatMoney(balanceById.get(detail.id)?.income ?? 0, currency)}
-                </Badge>
                 <Badge tone="negative">
                   Spent {formatMoney(balanceById.get(detail.id)?.spent ?? 0, currency)}
                 </Badge>
@@ -724,39 +557,6 @@ export default function AccountsPage() {
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-
-            <div>
-              <SectionTitle title="Incomes" />
-              {incomes.filter((i) => i.accountId === detail.id).length === 0 ? (
-                <p className="text-sm text-foreground/55">No income recorded.</p>
-              ) : (
-                <Card className="divide-y divide-border p-0">
-                  {incomes
-                    .filter((i) => i.accountId === detail.id)
-                    .map((income) => (
-                      <div key={income.id} className="flex items-center gap-3 px-3 py-2.5">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">
-                            {income.note?.trim() || "Income"}
-                          </p>
-                          <p className="text-xs text-foreground/50">{formatDate(income.date)}</p>
-                        </div>
-                        <span className="text-sm font-semibold text-positive tabular-nums">
-                          +{formatMoney(income.amount, currency)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => deleteIncome(income.id)}
-                          className="flex h-7 w-7 items-center justify-center rounded-full text-negative hover:bg-negative/10"
-                          aria-label="Delete income"
-                        >
-                          <TrashIcon className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                </Card>
               )}
             </div>
 
@@ -873,50 +673,6 @@ export default function AccountsPage() {
         </div>
       </Sheet>
 
-      {/* Add income */}
-      <Sheet
-        open={incomeOpen}
-        onClose={() => setIncomeOpen(false)}
-        title="Add income"
-        footer={
-          <Button fullWidth loading={savingIncome} onClick={saveIncome}>
-            Add income
-          </Button>
-        }
-      >
-        <div className="space-y-4">
-          <FormField label="Account">
-            <Select value={incomeAccountId} onChange={(e) => setIncomeAccountId(e.target.value)}>
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.icon} {account.name}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-          <FormField label="Amount">
-            <Input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              value={incomeAmount}
-              onChange={(e) => setIncomeAmount(e.target.value)}
-              placeholder="0"
-            />
-          </FormField>
-          <FormField label="Date">
-            <Input type="date" value={incomeDate} onChange={(e) => setIncomeDate(e.target.value)} />
-          </FormField>
-          <FormField label="Note (optional)">
-            <Textarea
-              value={incomeNote}
-              onChange={(e) => setIncomeNote(e.target.value)}
-              placeholder="e.g. Salary, top-up"
-            />
-          </FormField>
-        </div>
-      </Sheet>
-
       {/* Delete confirm */}
       <Sheet
         open={confirm !== null}
@@ -934,8 +690,7 @@ export default function AccountsPage() {
         }
       >
         <p className="text-sm text-foreground/70">
-          {confirm?.name} and its income records will be removed. Expenses that used it
-          stay in your ledger.
+          {confirm?.name} will be removed. Expenses that used it stay in your ledger.
         </p>
       </Sheet>
     </div>

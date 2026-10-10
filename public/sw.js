@@ -1,8 +1,8 @@
-/* Expencir PWA service worker
+/* Expenza PWA service worker
  * Caches the app shell and static assets so the app opens offline.
  * Live data is handled by Firestore's own offline persistence.
  */
-const VERSION = "expencir-v2";
+const VERSION = "expenza-v6";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const OFFLINE_URL = "/offline";
@@ -63,7 +63,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || isBypassed(url)) return;
 
-  // Navigations: network first, fall back to cache, then offline page.
+  // Navigations: network first, fall back to exact cache, then app shell, then offline page.
   if (request.mode === "navigate") {
     event.respondWith(
       (async () => {
@@ -74,21 +74,24 @@ self.addEventListener("fetch", (event) => {
           return fresh;
         } catch {
           const cached = await caches.match(request);
-          return cached || (await caches.match(OFFLINE_URL));
+          if (cached) return cached;
+          const appShell = await caches.match("/");
+          if (appShell) return appShell;
+          return await caches.match(OFFLINE_URL);
         }
       })()
     );
     return;
   }
 
-  // Static assets: cache first, then network and store.
+  // Static assets & RSC payloads: cache first, then network and store.
   event.respondWith(
     (async () => {
       const cached = await caches.match(request);
       if (cached) return cached;
       try {
         const fresh = await fetch(request);
-        if (fresh && fresh.status === 200 && fresh.type === "basic") {
+        if (fresh && fresh.status === 200 && (fresh.type === "basic" || fresh.type === "cors")) {
           const cache = await caches.open(ASSET_CACHE);
           cache.put(request, fresh.clone());
         }

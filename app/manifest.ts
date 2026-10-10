@@ -2,15 +2,15 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Expencir",
-    short_name: "Expencir",
-    description: "Expencir is your smart expense tracker, designed to help you manage your money, stay organized and achieve your financial goals — effortlessly.",
+    name: "Expenza",
+    short_name: "Expenza",
+    description: "Expenza is your smart expense tracker, designed to help you manage your money, stay organized and achieve your financial goals — effortlessly.",
     start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#14146e",
-    theme_color: "#14146e",
+    background_color: "#6366f1",
+    theme_color: "#6366f1",
     categories: ["finance", "productivity"],
     icons: [
       {

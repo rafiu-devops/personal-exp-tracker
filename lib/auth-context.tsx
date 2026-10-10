@@ -11,9 +11,11 @@ import {
 } from "react";
 import {
   createUserWithEmailAndPassword,
+  getRedirectResult,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   updateProfile,
   type User,
@@ -108,6 +110,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     const auth = getFirebaseAuth();
+
+    // Check for result from redirect sign-in (fallback for mobile/popups)
+    void getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          void ensureUserProfile(result.user);
+        }
+      })
+      .catch((err) => {
+        console.error("Redirect sign-in error:", err);
+      });
+
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       setUser(nextUser);
       if (nextUser) {
@@ -145,7 +159,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signInWithGoogle = useCallback(async () => {
-    await signInWithPopup(getFirebaseAuth(), getGoogleAuthProvider());
+    const auth = getFirebaseAuth();
+    const provider = getGoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error: unknown) {
+      const code =
+        typeof error === "object" && error !== null && "code" in error
+          ? String((error as { code: unknown }).code)
+          : "";
+      if (code === "auth/popup-blocked" || code === "auth/cancelled-popup-request") {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
+      throw error;
+    }
   }, []);
 
   const signOutUser = useCallback(async () => {

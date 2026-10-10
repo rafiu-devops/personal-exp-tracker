@@ -10,75 +10,17 @@ if (!fs.existsSync(iconsDir)) {
   fs.mkdirSync(iconsDir, { recursive: true });
 }
 
-/**
- * Expencir Swirl Emblem SVG Generator
- * 180-degree rotational symmetry matching reference image (image_2.png):
- * - Main S-swoosh upper: loops from top-right down into center S-curve
- * - Crescent 1: top outer swoosh
- * - Crescent 2: top mid swoosh
- * - Lower half: 180° exact rotation of upper half
- */
+const BLADE_PATH =
+  "M44.7 239.7 L45.3 243.2 L49.0 250.2 L54.0 258.8 L61.1 269.4 L66.9 276.9 L73.0 284.0 L79.4 290.7 L86.1 296.8 L92.9 302.5 L100.0 307.7 L107.2 312.3 L114.5 316.5 L122.0 320.1 L129.5 323.2 L137.1 325.7 L144.9 327.8 L152.5 329.3 L160.0 330.2 L167.4 330.7 L176.9 330.4 L184.0 329.7 L191.1 328.4 L199.8 325.9 L206.3 323.4 L214.1 319.6 L219.6 316.1 L225.1 312.0 L229.9 307.6 L235.4 301.3 L239.2 295.9 L242.6 289.8 L244.6 284.8 L244.6 281.3 L243.3 278.1 L241.3 275.9 L238.2 274.3 L234.7 274.0 L226.8 275.6 L220.8 276.3 L212.8 276.4 L207.2 276.0 L199.5 274.9 L194.1 273.6 L186.6 271.2 L179.3 268.1 L168.1 261.7 L157.5 253.6 L148.0 244.1 L139.7 233.3 L132.5 221.3 L126.7 208.3 L123.0 197.0 L119.8 182.6 L118.6 173.6 L117.9 164.4 L117.8 155.1 L118.3 145.7 L120.3 129.6 L122.3 120.1 L124.7 111.0 L124.9 108.7 L124.3 105.8 L122.8 103.3 L120.6 101.4 L117.8 100.3 L114.3 100.2 L110.6 101.8 L102.5 109.8 L95.4 117.6 L87.2 127.7 L79.8 138.2 L74.1 147.1 L67.8 158.3 L63.2 167.8 L59.1 177.3 L55.5 187.1 L52.4 197.0 L49.7 207.1 L47.6 217.2 L45.9 227.5 L44.7 239.7 Z";
 
-const upperMainS = `M 780 260
-  C 860 380 830 520 730 620
-  C 640 710 520 730 430 660
-  C 380 620 370 550 420 520
-  C 480 480 570 510 630 460
-  C 700 400 710 310 650 240
-  C 690 220 740 230 780 260 Z`;
-
-// High-precision smooth vector paths for 1000x1000 viewport
-function getEmblemPaths() {
-  // 6 swooshes forming the Expencir swirl emblem with uniform gaps and smooth curves
-  return `
-    <!-- Top-Right Main Swoosh curving down into center -->
-    <path d="M 520 120 
-             C 680 120 820 220 860 380 
-             C 880 460 850 560 780 630 
-             C 710 700 600 730 510 680 
-             C 450 645 420 575 460 520 
-             C 500 465 570 470 630 430 
-             C 710 380 730 280 650 200 
-             C 610 160 560 135 520 120 Z" />
-
-    <!-- Top Outer Swoosh (Crescent 1) -->
-    <path d="M 240 240 
-             C 330 150 450 90 580 90 
-             C 500 135 420 190 360 260 
-             C 300 330 270 410 280 500 
-             C 240 440 225 340 240 240 Z" />
-
-    <!-- Top Mid Swoosh (Crescent 2) -->
-    <path d="M 380 340 
-             C 440 280 520 240 610 230 
-             C 550 270 500 320 460 380 
-             C 420 440 400 500 410 570 
-             C 380 515 370 420 380 340 Z" />
-
-    <!-- 180-degree Rotated Lower Half -->
-    <g transform="rotate(180 500 500)">
-      <path d="M 520 120 
-               C 680 120 820 220 860 380 
-               C 880 460 850 560 780 630 
-               C 710 700 600 730 510 680 
-               C 450 645 420 575 460 520 
-               C 500 465 570 470 630 430 
-               C 710 380 730 280 650 200 
-               C 610 160 560 135 520 120 Z" />
-
-      <path d="M 240 240 
-               C 330 150 450 90 580 90 
-               C 500 135 420 190 360 260 
-               C 300 330 270 410 280 500 
-               C 240 440 225 340 240 240 Z" />
-
-      <path d="M 380 340 
-               C 440 280 520 240 610 230 
-               C 550 270 500 320 460 380 
-               C 420 440 400 500 410 570 
-               C 380 515 370 420 380 340 Z" />
-    </g>
-  `;
+function getEmblemPaths(fill = "currentColor") {
+  const angles = [0, 60, 120, 180, 240, 300];
+  return angles
+    .map(
+      (deg) =>
+        `    <path d="${BLADE_PATH}" fill="${fill}" transform="rotate(${deg} 256 256)" />`
+    )
+    .join("\n");
 }
 
 // Standard SVG definitions with proper gradients matching Expencir indigo palette (#6366F1, #4F46E5)
@@ -126,14 +68,14 @@ function createFullLogoSvg(mode = "dark") {
     </g>
   </g>
 
-  <!-- Right: Wordmark "EXPENCIR" in bold futuristic typography -->
+  <!-- Right: Wordmark "EXPENZA" in bold futuristic typography -->
   <g transform="translate(480, 265)">
     <text x="0" y="0" 
           font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
           font-size="140" 
           font-weight="900" 
           letter-spacing="14" 
-          fill="url(#wordmarkGrad)">EXPENCIR</text>
+          fill="url(#wordmarkGrad)">EXPENZA</text>
     
     <!-- Tagline: Track · Manage · Grow -->
     <text x="10" y="85" 
@@ -152,9 +94,9 @@ function createAppIconSvg(size = 1024) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${size}" height="${size}">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1E1B4B" />
-      <stop offset="50%" stop-color="#0F172A" />
-      <stop offset="100%" stop-color="#0B1020" />
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="50%" stop-color="#585BF0" />
+      <stop offset="100%" stop-color="#4F46E5" />
     </linearGradient>
     <linearGradient id="whiteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF" />
@@ -162,7 +104,7 @@ function createAppIconSvg(size = 1024) {
     </linearGradient>
   </defs>
 
-  <!-- Dark navy squircle background -->
+  <!-- Light purple brand squircle background -->
   <rect width="1024" height="1024" rx="224" ry="224" fill="url(#bgGrad)" />
   <rect width="1024" height="1024" rx="224" ry="224" fill="none" stroke="#6366F1" stroke-width="6" stroke-opacity="0.25" />
 

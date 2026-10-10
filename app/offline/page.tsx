@@ -8,7 +8,7 @@ export default function OfflinePage() {
       <span className="text-5xl">📡</span>
       <h1 className="text-xl font-bold">You&apos;re offline</h1>
       <p className="max-w-sm text-sm text-foreground/55">
-        Expencir couldn&apos;t reach the network. Previously loaded data is still available —
+        Expenza couldn&apos;t reach the network. Previously loaded data is still available —
         reopen the app, and your changes will sync automatically once you&apos;re back online.
       </p>
       <Link
