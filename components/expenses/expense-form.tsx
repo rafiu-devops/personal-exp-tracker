@@ -161,7 +161,7 @@ export function ExpenseForm({
               min={0}
               step="1"
               placeholder="0"
-              className="w-full rounded-2xl border border-border bg-surface py-3 pl-12 pr-4 text-2xl font-bold outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+              className="w-full rounded-2xl border border-border bg-surface py-3 pl-12 pr-4 text-2xl font-bold text-foreground outline-none transition placeholder:text-foreground/45 focus:border-brand focus:ring-2 focus:ring-brand/20"
               {...register("amount")}
             />
           </div>

@@ -22,7 +22,9 @@ export function friendlyError(error: unknown): string {
     "auth/operation-not-allowed":
       "This sign-in method is not enabled in Firebase. Enable Google in Firebase Console > Authentication > Sign-in method.",
     "auth/unauthorized-domain":
-      "This domain is not authorized in Firebase. Add your deployed domain in Firebase Console > Authentication > Settings > Authorized Domains.",
+      typeof window !== "undefined" && window.location?.hostname
+        ? `This domain (${window.location.hostname}) is not authorized in Firebase. Add it in Firebase Console > Authentication > Settings > Authorized domains.`
+        : "This domain is not authorized in Firebase. Add your current domain in Firebase Console > Authentication > Settings > Authorized domains.",
     "permission-denied": "You don't have permission to do that.",
     unavailable: "You appear to be offline. Changes will sync when you reconnect.",
   };

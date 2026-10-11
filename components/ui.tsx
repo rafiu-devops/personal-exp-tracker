@@ -44,13 +44,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   { variant = "primary", size = "md", loading, fullWidth, className, children, disabled, ...rest },
   ref
 ) {
+  let variantStyle = BUTTON_VARIANTS[variant];
+  if (className && /\bbg-/.test(className)) {
+    variantStyle = variantStyle.replace(/\bbg-\S+\b/g, "");
+  }
   return (
     <button
       ref={ref}
       disabled={disabled || loading}
       className={cn(
         "inline-flex items-center justify-center font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
-        BUTTON_VARIANTS[variant],
+        variantStyle,
         BUTTON_SIZES[size],
         fullWidth && "w-full",
         className
@@ -135,11 +139,37 @@ export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: st
 }
 
 const FIELD_BASE =
-  "w-full rounded-2xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground outline-none transition placeholder:text-foreground/35 focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-60";
+  "w-full rounded-2xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground outline-none transition placeholder:text-foreground/50 focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-60";
 
-export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
-  function Input({ className, ...rest }, ref) {
-    return <input ref={ref} className={cn(FIELD_BASE, className)} {...rest} />;
+const AUTH_FIELD_BASE =
+  "w-full rounded-2xl border border-white/20 bg-slate-900/80 px-3.5 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-white focus:ring-2 focus:ring-white/20 disabled:opacity-60";
+
+function resolveFieldClasses(base: string, className?: string): string {
+  if (!className) return base;
+  let classes = base;
+  if (/\bbg-/.test(className)) {
+    classes = classes.replace(/\bbg-surface\b/, "");
+  }
+  if (/\bplaceholder:/.test(className)) {
+    classes = classes.replace(/\bplaceholder:text-foreground\/\d+\b/, "");
+  }
+  if (/\btext-(white|black|slate-|gray-|zinc-|neutral-|stone-|rose-|indigo-)/.test(className)) {
+    classes = classes.replace(/\btext-foreground\b/, "");
+  }
+  if (/\bborder-(white|black|slate-|gray-|zinc-|neutral-|stone-|rose-|indigo-)/.test(className)) {
+    classes = classes.replace(/\bborder-border\b/, "");
+  }
+  return cn(classes, className);
+}
+
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  variant?: "default" | "auth";
+}
+
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  function Input({ className, variant = "default", ...rest }, ref) {
+    const base = variant === "auth" ? AUTH_FIELD_BASE : FIELD_BASE;
+    return <input ref={ref} className={resolveFieldClasses(base, className)} {...rest} />;
   }
 );
 
@@ -147,13 +177,23 @@ export const Textarea = forwardRef<
   HTMLTextAreaElement,
   TextareaHTMLAttributes<HTMLTextAreaElement>
 >(function Textarea({ className, ...rest }, ref) {
-  return <textarea ref={ref} className={cn(FIELD_BASE, "min-h-[80px] resize-none", className)} {...rest} />;
+  return (
+    <textarea
+      ref={ref}
+      className={resolveFieldClasses(cn(FIELD_BASE, "min-h-[80px] resize-none"), className)}
+      {...rest}
+    />
+  );
 });
 
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
   function Select({ className, children, ...rest }, ref) {
     return (
-      <select ref={ref} className={cn(FIELD_BASE, "appearance-none", className)} {...rest}>
+      <select
+        ref={ref}
+        className={resolveFieldClasses(cn(FIELD_BASE, "appearance-none"), className)}
+        {...rest}
+      >
         {children}
       </select>
     );

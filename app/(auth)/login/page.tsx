@@ -63,10 +63,10 @@ export default function LoginPage() {
         <div>
           <label className="mb-1.5 block text-sm font-medium text-white/90">Email</label>
           <Input
+            variant="auth"
             type="email"
             autoComplete="email"
             placeholder="you@example.com"
-            className="bg-slate-900/70 border-white/20 text-white placeholder:text-white/40 focus:border-white focus:ring-white/20"
             {...register("email")}
           />
           {errors.email?.message && (
@@ -77,10 +77,10 @@ export default function LoginPage() {
         <div>
           <label className="mb-1.5 block text-sm font-medium text-white/90">Password</label>
           <Input
+            variant="auth"
             type="password"
             autoComplete="current-password"
             placeholder="••••••••"
-            className="bg-slate-900/70 border-white/20 text-white placeholder:text-white/40 focus:border-white focus:ring-white/20"
             {...register("password")}
           />
           {errors.password?.message && (
@@ -107,12 +107,12 @@ export default function LoginPage() {
 
       <Button
         type="button"
-        variant="secondary"
+        variant="ghost"
         fullWidth
         size="lg"
         loading={googleLoading}
         onClick={onGoogle}
-        className="bg-slate-900/70 hover:bg-slate-900/90 border border-white/25 text-white font-semibold rounded-2xl h-12 shadow-md transition active:scale-[0.99]"
+        className="bg-slate-900/80 hover:bg-slate-900 border border-white/25 text-white font-semibold rounded-2xl h-12 shadow-md transition active:scale-[0.99]"
       >
         <GoogleIcon className="h-5 w-5" />
         Continue with Google
