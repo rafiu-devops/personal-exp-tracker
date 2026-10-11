@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, FormField, Input } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
 import { GoogleIcon } from "@/components/icons";
 import { friendlyError, useAuth } from "@/lib/auth-context";
 import { loginSchema, type LoginValues } from "@/lib/validation";
@@ -31,7 +31,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await signIn(values.email, values.password);
-      toast("Welcome back!", "success");
+      toast(!online ? "Signed in offline. Welcome back!" : "Welcome back!", "success");
     } catch (error) {
       toast(friendlyError(error), "error");
     } finally {
@@ -40,6 +40,13 @@ export default function LoginPage() {
   };
 
   const onGoogle = async () => {
+    if (!online) {
+      toast(
+        "Continue with Google requires an internet connection. Please connect or use email & password.",
+        "info"
+      );
+      return;
+    }
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
@@ -54,8 +61,7 @@ export default function LoginPage() {
     <div className="rounded-3xl border border-white/25 bg-slate-950/45 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl text-white space-y-5">
       {!online && (
         <div className="rounded-2xl border border-amber-400/30 bg-amber-400/20 px-3.5 py-2.5 text-xs font-medium text-amber-200">
-          You&apos;re offline. If you have a saved session you&apos;ll be taken straight
-          in; otherwise connect to sign in.
+          You&apos;re offline. You can sign in with email &amp; password. Your data is saved locally and will auto-sync when online.
         </div>
       )}
 

@@ -2,13 +2,27 @@
  * Caches the app shell and static assets so the app opens offline.
  * Live data is handled by Firestore's own offline persistence.
  */
-const VERSION = "expenza-v6";
+const VERSION = "expenza-v9";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const OFFLINE_URL = "/offline";
 
 const PRECACHE = [
   "/",
+  "/login",
+  "/register",
+  "/dashboard",
+  "/expenses",
+  "/expenses/new",
+  "/expenses/detail",
+  "/expenses/edit",
+  "/groups",
+  "/groups/new",
+  "/groups/detail",
+  "/people",
+  "/accounts",
+  "/reports",
+  "/settings",
   "/offline",
   "/manifest.webmanifest",
   "/icons/icon-192.png",
@@ -73,7 +87,7 @@ self.addEventListener("fetch", (event) => {
           cache.put(request, fresh.clone());
           return fresh;
         } catch {
-          const cached = await caches.match(request);
+          const cached = await caches.match(request, { ignoreSearch: true });
           if (cached) return cached;
           const appShell = await caches.match("/");
           if (appShell) return appShell;

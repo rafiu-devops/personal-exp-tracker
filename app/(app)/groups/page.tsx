@@ -58,7 +58,7 @@ export default function GroupsPage() {
       ) : (
         <div className="space-y-3">
           {rows.map(({ group, total, count, balance }) => (
-            <Link key={group.id} href={`/groups/${group.id}`} className="block">
+            <Link key={group.id} href={`/groups/detail?id=${group.id}`} className="block">
               <Card className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10 text-xl">
                   👥

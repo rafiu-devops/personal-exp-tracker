@@ -102,14 +102,14 @@ export function ExpenseForm({
       if (initial) {
         await updateExpense(initial.id, values);
         toast("Expense updated", "success");
-        router.push(`/expenses/${initial.id}`);
+        router.push(`/expenses/detail?id=${initial.id}`);
       } else {
         const id = await addExpense(values);
         toast("Expense saved", "success");
-        // Offline, dynamic routes can't be fetched — go to the (prefetched) list.
-        router.push(online ? `/expenses/${id}` : "/expenses");
+        // Offline, fall back to the (already cached) list if the detail route is unavailable.
+        router.push(online ? `/expenses/detail?id=${id}` : "/expenses");
       }
-      router.refresh();
+      if (online) router.refresh();
     } catch (error) {
       toast(friendlyError(error), "error");
     } finally {

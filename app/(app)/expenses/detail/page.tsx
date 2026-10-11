@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   Avatar,
@@ -23,11 +23,14 @@ import { useToast } from "@/components/toast";
 import { computeSelfLedger } from "@/lib/balances";
 import { formatDate, formatMoney } from "@/lib/format";
 import { SELF_ID } from "@/lib/types";
+import { useOnline } from "@/lib/online";
 
-export default function ExpenseDetailPage() {
-  const params = useParams<{ id: string }>();
+function ExpenseDetailInner() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "";
   const router = useRouter();
   const { profile } = useAuth();
+  const online = useOnline();
   const {
     expenses,
     settlements,
@@ -44,7 +47,7 @@ export default function ExpenseDetailPage() {
   const [deleting, setDeleting] = useState(false);
 
   const currency = profile?.currency ?? "PKR";
-  const expense = expenses.find((e) => e.id === params.id);
+  const expense = expenses.find((e) => e.id === id);
   const ledger = useMemo(() => computeSelfLedger(expenses, settlements), [expenses, settlements]);
 
   if (!expense) {
@@ -87,7 +90,7 @@ export default function ExpenseDetailPage() {
       await deleteExpense(expense.id);
       toast("Expense deleted", "success");
       router.push("/expenses");
-      router.refresh();
+      if (online) router.refresh();
     } catch {
       toast("Could not delete the expense", "error");
       setDeleting(false);
@@ -103,7 +106,7 @@ export default function ExpenseDetailPage() {
         actions={
           <div className="flex items-center gap-1">
             <Link
-              href={`/expenses/${expense.id}/edit`}
+              href={`/expenses/edit?id=${expense.id}`}
               className="flex h-9 w-9 items-center justify-center rounded-full text-foreground/70 transition hover:bg-surface-muted"
               aria-label="Edit"
             >
@@ -275,5 +278,19 @@ export default function ExpenseDetailPage() {
         groupId={expense.groupId}
       />
     </div>
+  );
+}
+
+export default function ExpenseDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-16">
+          <Spinner className="h-6 w-6 text-brand" />
+        </div>
+      }
+    >
+      <ExpenseDetailInner />
+    </Suspense>
   );
 }

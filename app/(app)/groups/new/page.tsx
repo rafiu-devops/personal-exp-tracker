@@ -34,7 +34,7 @@ export default function NewGroupPage() {
     try {
       const id = await addGroup({ name: name.trim(), description, memberIds });
       toast("Group created", "success");
-      router.push(online ? `/groups/${id}` : "/groups");
+      router.push(online ? `/groups/detail?id=${id}` : "/groups");
     } catch (error) {
       toast(friendlyError(error), "error");
       setSaving(false);

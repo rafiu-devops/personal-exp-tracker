@@ -9,10 +9,12 @@ import { GoogleIcon } from "@/components/icons";
 import { friendlyError, useAuth } from "@/lib/auth-context";
 import { registerSchema, type RegisterValues } from "@/lib/validation";
 import { useToast } from "@/components/toast";
+import { useOnline } from "@/lib/online";
 
 export default function RegisterPage() {
   const { signUp, signInWithGoogle } = useAuth();
   const { toast } = useToast();
+  const online = useOnline();
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -29,7 +31,12 @@ export default function RegisterPage() {
     setSubmitting(true);
     try {
       await signUp(values.name, values.email, values.password);
-      toast("Account created. Welcome!", "success");
+      toast(
+        !online
+          ? "Account created in offline mode! Welcome!"
+          : "Account created. Welcome!",
+        "success"
+      );
     } catch (error) {
       toast(friendlyError(error), "error");
     } finally {
@@ -38,6 +45,13 @@ export default function RegisterPage() {
   };
 
   const onGoogle = async () => {
+    if (!online) {
+      toast(
+        "Continue with Google requires an internet connection. Please connect or use email & password.",
+        "info"
+      );
+      return;
+    }
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
@@ -50,6 +64,11 @@ export default function RegisterPage() {
 
   return (
     <div className="rounded-3xl border border-white/25 bg-slate-950/45 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl text-white space-y-5">
+      {!online && (
+        <div className="rounded-2xl border border-amber-400/30 bg-amber-400/20 px-3.5 py-2.5 text-xs font-medium text-amber-200">
+          You&apos;re offline. You can create an account with email &amp; password. Your data is saved locally and will auto-sync when online.
+        </div>
+      )}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <div>
           <label className="mb-1.5 block text-sm font-medium text-white/90">Full name</label>

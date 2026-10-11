@@ -20,8 +20,10 @@ import { useAuth } from "./auth-context";
 import { getDb, isFirebaseConfigured } from "./firebase";
 import { stripUndefined, userCollection, withId } from "./firestore";
 import { isOnline } from "./online";
+import { accountTypeMeta } from "./accounts";
 import { computeShares } from "./split";
 import { SELF_ID } from "./types";
+import { getOfflineCollection, setOfflineCollection } from "./offline-storage";
 import type {
   Account,
   Category,
@@ -171,7 +173,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const uid = user?.uid;
 
   useEffect(() => {
-    if (!uid || !isFirebaseConfigured()) {
+    if (!uid) {
       setCategories([]);
       setPeople([]);
       setGroups([]);
@@ -183,9 +185,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Always immediately hydrate from local cache so the screen is interactive in 0ms!
+    const cachedCats = getOfflineCollection<Category>(uid, "categories");
+    if (cachedCats.length > 0) setCategories(cachedCats);
+    const cachedPeople = getOfflineCollection<Person>(uid, "people");
+    if (cachedPeople.length > 0) setPeople(cachedPeople);
+    const cachedGroups = getOfflineCollection<Group>(uid, "groups");
+    if (cachedGroups.length > 0) setGroups(cachedGroups);
+    const cachedExpenses = getOfflineCollection<Expense>(uid, "expenses");
+    if (cachedExpenses.length > 0) setExpenses(cachedExpenses);
+    const cachedSettlements = getOfflineCollection<Settlement>(uid, "settlements");
+    if (cachedSettlements.length > 0) setSettlements(cachedSettlements);
+    const cachedAccounts = getOfflineCollection<Account>(uid, "accounts");
+    if (cachedAccounts.length > 0) setAccounts(cachedAccounts);
+    const cachedIncomes = getOfflineCollection<Income>(uid, "incomes");
+    if (cachedIncomes.length > 0) setIncomes(cachedIncomes);
+    const cachedTransfers = getOfflineCollection<Transfer>(uid, "transfers");
+    if (cachedTransfers.length > 0) setTransfers(cachedTransfers);
+
+    // If this is an offline user session or Firebase is not configured, we rely on local storage!
+    if (uid.startsWith("offline_") || !isFirebaseConfigured()) {
+      setPending(0);
+      return;
+    }
+
     setPending(8);
     const handleError = (err: unknown) => {
       console.error(err);
+      // Fallback to local collections on offline/network errors
+      setCategories(getOfflineCollection<Category>(uid, "categories"));
+      setPeople(getOfflineCollection<Person>(uid, "people"));
+      setGroups(getOfflineCollection<Group>(uid, "groups"));
+      setExpenses(getOfflineCollection<Expense>(uid, "expenses"));
+      setSettlements(getOfflineCollection<Settlement>(uid, "settlements"));
+      setAccounts(getOfflineCollection<Account>(uid, "accounts"));
+      setIncomes(getOfflineCollection<Income>(uid, "incomes"));
+      setTransfers(getOfflineCollection<Transfer>(uid, "transfers"));
       setError("Could not load your data. Check your connection.");
       setPending((p) => Math.max(0, p - 1));
     };
@@ -195,7 +230,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       onSnapshot(
         userCollection(uid, "categories"),
         (snap) => {
-          setCategories(snap.docs.map((d) => withId<Category>(d)));
+          const list = snap.docs.map((d) => withId<Category>(d));
+          setCategories(list);
+          setOfflineCollection(uid, "categories", list);
           done();
         },
         handleError
@@ -203,7 +240,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       onSnapshot(
         userCollection(uid, "people"),
         (snap) => {
-          setPeople(snap.docs.map((d) => withId<Person>(d)));
+          const list = snap.docs.map((d) => withId<Person>(d));
+          setPeople(list);
+          setOfflineCollection(uid, "people", list);
           done();
         },
         handleError
@@ -211,7 +250,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       onSnapshot(
         userCollection(uid, "groups"),
         (snap) => {
-          setGroups(snap.docs.map((d) => withId<Group>(d)));
+          const list = snap.docs.map((d) => withId<Group>(d));
+          setGroups(list);
+          setOfflineCollection(uid, "groups", list);
           done();
         },
         handleError
@@ -219,7 +260,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       onSnapshot(
         userCollection(uid, "expenses"),
         (snap) => {
-          setExpenses(snap.docs.map((d) => withId<Expense>(d)));
+          const list = snap.docs.map((d) => withId<Expense>(d));
+          setExpenses(list);
+          setOfflineCollection(uid, "expenses", list);
           done();
         },
         handleError
@@ -227,7 +270,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       onSnapshot(
         userCollection(uid, "settlements"),
         (snap) => {
-          setSettlements(snap.docs.map((d) => withId<Settlement>(d)));
+          const list = snap.docs.map((d) => withId<Settlement>(d));
+          setSettlements(list);
+          setOfflineCollection(uid, "settlements", list);
           done();
         },
         handleError
@@ -235,7 +280,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       onSnapshot(
         userCollection(uid, "accounts"),
         (snap) => {
-          setAccounts(snap.docs.map((d) => withId<Account>(d)));
+          const list = snap.docs.map((d) => withId<Account>(d));
+          setAccounts(list);
+          setOfflineCollection(uid, "accounts", list);
           done();
         },
         handleError
@@ -243,7 +290,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       onSnapshot(
         userCollection(uid, "incomes"),
         (snap) => {
-          setIncomes(snap.docs.map((d) => withId<Income>(d)));
+          const list = snap.docs.map((d) => withId<Income>(d));
+          setIncomes(list);
+          setOfflineCollection(uid, "incomes", list);
           done();
         },
         handleError
@@ -251,7 +300,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       onSnapshot(
         userCollection(uid, "transfers"),
         (snap) => {
-          setTransfers(snap.docs.map((d) => withId<Transfer>(d)));
+          const list = snap.docs.map((d) => withId<Transfer>(d));
+          setTransfers(list);
+          setOfflineCollection(uid, "transfers", list);
           done();
         },
         handleError
@@ -291,257 +342,459 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addCategory = useCallback(async (values: CategoryValues) => {
     const u = requireUid();
-    const ref = doc(userCollection(u, "categories"));
-    await runWrite(
-      setDoc(ref, stripUndefined({ ...values, isDefault: false, createdAt: Date.now() }))
-    );
-    return ref.id;
+    const id = `cat_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const category: Category = { ...values, id, isDefault: false, createdAt: Date.now() };
+
+    setCategories((prev) => {
+      const next = [...prev, category];
+      setOfflineCollection(u, "categories", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      const ref = doc(userCollection(u, "categories"), id);
+      void runWrite(
+        setDoc(ref, stripUndefined({ ...values, isDefault: false, createdAt: category.createdAt }))
+      );
+    }
+    return id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const updateCategory = useCallback(async (id: string, values: Partial<CategoryValues>) => {
     const u = requireUid();
-    await runWrite(updateDoc(doc(getDb(), "users", u, "categories", id), stripUndefined(values)));
+    setCategories((prev) => {
+      const next = prev.map((c) => (c.id === id ? { ...c, ...values } : c));
+      setOfflineCollection(u, "categories", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(updateDoc(doc(getDb(), "users", u, "categories", id), stripUndefined(values)));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const deleteCategory = useCallback(async (id: string) => {
     const u = requireUid();
-    await runWrite(deleteDoc(doc(getDb(), "users", u, "categories", id)));
+    setCategories((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      setOfflineCollection(u, "categories", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(deleteDoc(doc(getDb(), "users", u, "categories", id)));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const addPerson = useCallback(async (values: PersonValues) => {
     const u = requireUid();
-    const ref = doc(userCollection(u, "people"));
-    await runWrite(
-      setDoc(
-        ref,
-        stripUndefined({
-          name: values.name.trim(),
-          phone: cleanOptional(values.phone),
-          email: cleanOptional(values.email),
-          createdAt: Date.now(),
-        })
-      )
-    );
-    return ref.id;
+    const id = `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const person: Person = {
+      id,
+      name: values.name.trim(),
+      phone: cleanOptional(values.phone),
+      email: cleanOptional(values.email),
+      createdAt: Date.now(),
+    };
+
+    setPeople((prev) => {
+      const next = [...prev, person];
+      setOfflineCollection(u, "people", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      const ref = doc(userCollection(u, "people"), id);
+      void runWrite(setDoc(ref, stripUndefined(person)));
+    }
+    return id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const updatePerson = useCallback(async (id: string, values: Partial<PersonValues>) => {
     const u = requireUid();
-    await runWrite(
-      updateDoc(
-        doc(getDb(), "users", u, "people", id),
-        stripUndefined({
-          ...values,
-          name: values.name?.trim(),
-          phone: cleanOptional(values.phone),
-          email: cleanOptional(values.email),
-        })
-      )
-    );
+    setPeople((prev) => {
+      const next = prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              ...values,
+              name: values.name?.trim() ?? p.name,
+              phone: cleanOptional(values.phone) ?? p.phone,
+              email: cleanOptional(values.email) ?? p.email,
+            }
+          : p
+      );
+      setOfflineCollection(u, "people", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(
+        updateDoc(
+          doc(getDb(), "users", u, "people", id),
+          stripUndefined({
+            ...values,
+            name: values.name?.trim(),
+            phone: cleanOptional(values.phone),
+            email: cleanOptional(values.email),
+          })
+        )
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const deletePerson = useCallback(async (id: string) => {
     const u = requireUid();
-    await runWrite(deleteDoc(doc(getDb(), "users", u, "people", id)));
+    setPeople((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      setOfflineCollection(u, "people", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(deleteDoc(doc(getDb(), "users", u, "people", id)));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const addGroup = useCallback(async (values: GroupValues) => {
     const u = requireUid();
     const now = Date.now();
-    const ref = doc(userCollection(u, "groups"));
-    await runWrite(
-      setDoc(
-        ref,
-        stripUndefined({
-          name: values.name.trim(),
-          description: cleanOptional(values.description),
-          memberIds: values.memberIds ?? [],
-          archived: false,
-          createdAt: now,
-          updatedAt: now,
-        })
-      )
-    );
-    return ref.id;
+    const id = `grp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const group: Group = {
+      id,
+      name: values.name.trim(),
+      description: cleanOptional(values.description),
+      memberIds: values.memberIds ?? [],
+      archived: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    setGroups((prev) => {
+      const next = [...prev, group];
+      setOfflineCollection(u, "groups", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      const ref = doc(userCollection(u, "groups"), id);
+      void runWrite(setDoc(ref, stripUndefined(group)));
+    }
+    return id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const updateGroup = useCallback(async (id: string, values: Partial<GroupValues>) => {
     const u = requireUid();
-    await runWrite(
-      updateDoc(
-        doc(getDb(), "users", u, "groups", id),
-        stripUndefined({
-          ...values,
-          name: values.name?.trim(),
-          description: cleanOptional(values.description),
-          updatedAt: Date.now(),
-        })
-      )
-    );
+    setGroups((prev) => {
+      const next = prev.map((g) =>
+        g.id === id
+          ? {
+              ...g,
+              ...values,
+              name: values.name?.trim() ?? g.name,
+              description: cleanOptional(values.description) ?? g.description,
+              updatedAt: Date.now(),
+            }
+          : g
+      );
+      setOfflineCollection(u, "groups", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(
+        updateDoc(
+          doc(getDb(), "users", u, "groups", id),
+          stripUndefined({
+            ...values,
+            name: values.name?.trim(),
+            description: cleanOptional(values.description),
+            updatedAt: Date.now(),
+          })
+        )
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const deleteGroup = useCallback(async (id: string) => {
     const u = requireUid();
-    await runWrite(deleteDoc(doc(getDb(), "users", u, "groups", id)));
+    setGroups((prev) => {
+      const next = prev.filter((g) => g.id !== id);
+      setOfflineCollection(u, "groups", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(deleteDoc(doc(getDb(), "users", u, "groups", id)));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const addExpense = useCallback(async (values: ExpenseFormValues) => {
     const u = requireUid();
     const payload = buildExpense(values);
-    const ref = doc(userCollection(u, "expenses"));
-    await runWrite(setDoc(ref, stripUndefined({ ...payload, createdAt: Date.now() })));
-    return ref.id;
+    const id = `exp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const expense: Expense = { ...payload, id, createdAt: Date.now() };
+
+    setExpenses((prev) => {
+      const next = [expense, ...prev];
+      setOfflineCollection(u, "expenses", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      const ref = doc(userCollection(u, "expenses"), id);
+      void runWrite(setDoc(ref, stripUndefined({ ...payload, createdAt: expense.createdAt })));
+    }
+    return id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const updateExpense = useCallback(async (id: string, values: ExpenseFormValues) => {
     const u = requireUid();
     const payload = buildExpense(values);
-    await runWrite(
-      setDoc(doc(getDb(), "users", u, "expenses", id), stripUndefined(payload), {
-        merge: true,
-      })
-    );
+    setExpenses((prev) => {
+      const next = prev.map((e) => (e.id === id ? { ...e, ...payload } : e));
+      setOfflineCollection(u, "expenses", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(
+        setDoc(doc(getDb(), "users", u, "expenses", id), stripUndefined(payload), {
+          merge: true,
+        })
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const deleteExpense = useCallback(async (id: string) => {
     const u = requireUid();
-    await runWrite(deleteDoc(doc(getDb(), "users", u, "expenses", id)));
+    setExpenses((prev) => {
+      const next = prev.filter((e) => e.id !== id);
+      setOfflineCollection(u, "expenses", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(deleteDoc(doc(getDb(), "users", u, "expenses", id)));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const addSettlement = useCallback(async (values: SettlementValues) => {
     const u = requireUid();
-    const ref = doc(userCollection(u, "settlements"));
-    await runWrite(
-      setDoc(
-        ref,
-        stripUndefined({
-          fromPersonId: values.fromPersonId,
-          toPersonId: values.toPersonId,
-          amount: Math.round(values.amount),
-          date: values.date,
-          note: cleanOptional(values.note),
-          accountId: cleanOptional(values.accountId),
-          groupId: cleanOptional(values.groupId),
-          createdAt: Date.now(),
-        })
-      )
-    );
-    return ref.id;
+    const id = `stl_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const settlement: Settlement = {
+      id,
+      fromPersonId: values.fromPersonId,
+      toPersonId: values.toPersonId,
+      amount: Math.round(values.amount),
+      date: values.date,
+      note: cleanOptional(values.note),
+      accountId: cleanOptional(values.accountId),
+      groupId: cleanOptional(values.groupId),
+      createdAt: Date.now(),
+    };
+
+    setSettlements((prev) => {
+      const next = [settlement, ...prev];
+      setOfflineCollection(u, "settlements", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      const ref = doc(userCollection(u, "settlements"), id);
+      void runWrite(setDoc(ref, stripUndefined(settlement)));
+    }
+    return id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const deleteSettlement = useCallback(async (id: string) => {
     const u = requireUid();
-    await runWrite(deleteDoc(doc(getDb(), "users", u, "settlements", id)));
+    setSettlements((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      setOfflineCollection(u, "settlements", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(deleteDoc(doc(getDb(), "users", u, "settlements", id)));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const addAccount = useCallback(async (values: AccountValues) => {
     const u = requireUid();
     const now = Date.now();
-    const ref = doc(userCollection(u, "accounts"));
-    await runWrite(
-      setDoc(
-        ref,
-        stripUndefined({
-          name: values.name.trim(),
-          type: values.type,
-          openingBalance: Math.round(values.openingBalance ?? 0),
-          icon: values.icon,
-          color: values.color,
-          archived: false,
-          createdAt: now,
-          updatedAt: now,
-        })
-      )
-    );
-    return ref.id;
+    const id = `acc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const meta = accountTypeMeta(values.type);
+    const account: Account = {
+      id,
+      name: values.name.trim(),
+      type: values.type,
+      openingBalance: Math.round(values.openingBalance ?? 0),
+      icon: values.icon ?? meta.icon,
+      color: values.color ?? meta.color,
+      archived: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    setAccounts((prev) => {
+      const next = [...prev, account];
+      setOfflineCollection(u, "accounts", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      const ref = doc(userCollection(u, "accounts"), id);
+      void runWrite(setDoc(ref, stripUndefined(account)));
+    }
+    return id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const updateAccountRecord = useCallback(async (id: string, values: Partial<AccountValues>) => {
     const u = requireUid();
-    await runWrite(
-      updateDoc(
-        doc(getDb(), "users", u, "accounts", id),
-        stripUndefined({
-          ...values,
-          name: values.name?.trim(),
-          openingBalance:
-            values.openingBalance === undefined ? undefined : Math.round(values.openingBalance),
-          updatedAt: Date.now(),
-        })
-      )
-    );
+    setAccounts((prev) => {
+      const next = prev.map((a) =>
+        a.id === id
+          ? {
+              ...a,
+              ...values,
+              name: values.name?.trim() ?? a.name,
+              openingBalance:
+                values.openingBalance === undefined
+                  ? a.openingBalance
+                  : Math.round(values.openingBalance),
+              updatedAt: Date.now(),
+            }
+          : a
+      );
+      setOfflineCollection(u, "accounts", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(
+        updateDoc(
+          doc(getDb(), "users", u, "accounts", id),
+          stripUndefined({
+            ...values,
+            name: values.name?.trim(),
+            openingBalance:
+              values.openingBalance === undefined ? undefined : Math.round(values.openingBalance),
+            updatedAt: Date.now(),
+          })
+        )
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const deleteAccount = useCallback(async (id: string) => {
     const u = requireUid();
-    await runWrite(deleteDoc(doc(getDb(), "users", u, "accounts", id)));
+    setAccounts((prev) => {
+      const next = prev.filter((a) => a.id !== id);
+      setOfflineCollection(u, "accounts", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(deleteDoc(doc(getDb(), "users", u, "accounts", id)));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const addIncome = useCallback(async (values: IncomeValues) => {
     const u = requireUid();
-    const ref = doc(userCollection(u, "incomes"));
-    await runWrite(
-      setDoc(
-        ref,
-        stripUndefined({
-          accountId: values.accountId,
-          amount: Math.round(values.amount),
-          date: values.date,
-          note: cleanOptional(values.note),
-          createdAt: Date.now(),
-        })
-      )
-    );
-    return ref.id;
+    const id = `inc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const income: Income = {
+      id,
+      accountId: values.accountId,
+      amount: Math.round(values.amount),
+      date: values.date,
+      note: cleanOptional(values.note),
+      createdAt: Date.now(),
+    };
+
+    setIncomes((prev) => {
+      const next = [income, ...prev];
+      setOfflineCollection(u, "incomes", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      const ref = doc(userCollection(u, "incomes"), id);
+      void runWrite(setDoc(ref, stripUndefined(income)));
+    }
+    return id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const deleteIncome = useCallback(async (id: string) => {
     const u = requireUid();
-    await runWrite(deleteDoc(doc(getDb(), "users", u, "incomes", id)));
+    setIncomes((prev) => {
+      const next = prev.filter((i) => i.id !== id);
+      setOfflineCollection(u, "incomes", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(deleteDoc(doc(getDb(), "users", u, "incomes", id)));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const addTransfer = useCallback(async (values: TransferValues) => {
     const u = requireUid();
-    const ref = doc(userCollection(u, "transfers"));
-    await runWrite(
-      setDoc(
-        ref,
-        stripUndefined({
-          fromAccountId: values.fromAccountId,
-          toAccountId: values.toAccountId,
-          amount: Math.round(values.amount),
-          date: values.date,
-          note: cleanOptional(values.note),
-          createdAt: Date.now(),
-        })
-      )
-    );
-    return ref.id;
+    const id = `trn_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const transfer: Transfer = {
+      id,
+      fromAccountId: values.fromAccountId,
+      toAccountId: values.toAccountId,
+      amount: Math.round(values.amount),
+      date: values.date,
+      note: cleanOptional(values.note),
+      createdAt: Date.now(),
+    };
+
+    setTransfers((prev) => {
+      const next = [transfer, ...prev];
+      setOfflineCollection(u, "transfers", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      const ref = doc(userCollection(u, "transfers"), id);
+      void runWrite(setDoc(ref, stripUndefined(transfer)));
+    }
+    return id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const deleteTransfer = useCallback(async (id: string) => {
     const u = requireUid();
-    await runWrite(deleteDoc(doc(getDb(), "users", u, "transfers", id)));
+    setTransfers((prev) => {
+      const next = prev.filter((t) => t.id !== id);
+      setOfflineCollection(u, "transfers", next);
+      return next;
+    });
+
+    if (!u.startsWith("offline_")) {
+      void runWrite(deleteDoc(doc(getDb(), "users", u, "transfers", id)));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 

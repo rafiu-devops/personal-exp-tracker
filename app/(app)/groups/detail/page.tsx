@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   Avatar,
@@ -26,8 +26,9 @@ import { useToast } from "@/components/toast";
 import { computeGroupBalances } from "@/lib/balances";
 import { formatDate, formatMoney } from "@/lib/format";
 
-export default function GroupDetailPage() {
-  const params = useParams<{ id: string }>();
+function GroupDetailInner() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "";
   const router = useRouter();
   const {
     groups,
@@ -41,7 +42,7 @@ export default function GroupDetailPage() {
   } = useData();
   const { toast } = useToast();
 
-  const group = groups.find((g) => g.id === params.id);
+  const group = groups.find((g) => g.id === id);
   const [editOpen, setEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -61,16 +62,16 @@ export default function GroupDetailPage() {
   }, [group]);
 
   const groupExpenses = useMemo(
-    () => expenses.filter((e) => e.groupId === params.id),
-    [expenses, params.id]
+    () => expenses.filter((e) => e.groupId === id),
+    [expenses, id]
   );
   const groupSettlements = useMemo(
-    () => settlements.filter((s) => s.groupId === params.id),
-    [settlements, params.id]
+    () => settlements.filter((s) => s.groupId === id),
+    [settlements, id]
   );
   const balance = useMemo(
-    () => computeGroupBalances(expenses, settlements, params.id),
-    [expenses, settlements, params.id]
+    () => computeGroupBalances(expenses, settlements, id),
+    [expenses, settlements, id]
   );
   const totalSpend = groupExpenses.reduce((acc, e) => acc + e.amount, 0);
 
@@ -364,5 +365,19 @@ export default function GroupDetailPage() {
         groupId={group.id}
       />
     </div>
+  );
+}
+
+export default function GroupDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-16">
+          <Spinner className="h-6 w-6 text-brand" />
+        </div>
+      }
+    >
+      <GroupDetailInner />
+    </Suspense>
   );
 }

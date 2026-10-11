@@ -5,12 +5,14 @@ import type { ReactNode } from "react";
 import { BottomNav } from "./bottom-nav";
 import { SidebarProvider } from "./sidebar";
 import { OfflineBanner } from "@/components/pwa/offline-banner";
+import { OfflinePrefetcher } from "@/components/pwa/offline-prefetcher";
 import { PlusIcon } from "@/components/icons";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <div className="min-h-dvh">
+        <OfflinePrefetcher />
         <OfflineBanner />
         <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-2">{children}</main>
 

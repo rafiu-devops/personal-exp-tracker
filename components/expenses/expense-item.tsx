@@ -29,7 +29,7 @@ export function ExpenseItem({
 
   return (
     <Link
-      href={`/expenses/${expense.id}`}
+      href={`/expenses/detail?id=${expense.id}`}
       className={cn(
         "flex items-center gap-3 rounded-2xl border border-border bg-surface px-3.5 py-3 transition hover:bg-surface-muted active:scale-[0.99]",
         className
