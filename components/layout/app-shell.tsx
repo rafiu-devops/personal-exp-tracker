@@ -11,10 +11,10 @@ import { PlusIcon } from "@/components/icons";
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
-      <div className="min-h-dvh">
+      <div className="flex min-h-dvh flex-col">
         <OfflinePrefetcher />
         <OfflineBanner />
-        <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-2">{children}</main>
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-28 pt-3">{children}</main>
 
         <Link
           href="/expenses/new"

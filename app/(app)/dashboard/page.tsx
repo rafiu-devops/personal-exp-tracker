@@ -167,18 +167,38 @@ export default function DashboardPage() {
 
       {/* Balance summary */}
       <div className="grid grid-cols-3 gap-3">
-        <Card className="p-3 text-center">
+        <button
+          type="button"
+          onClick={() =>
+            setSettlePreset({
+              direction: "iOwe",
+              amount: balances.youOwe > 0 ? balances.youOwe : undefined,
+            } as any)
+          }
+          className="cursor-pointer rounded-2xl border border-border bg-surface p-3 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:scale-[1.01] hover:bg-surface-muted active:scale-[0.99]"
+        >
           <p className="text-xs text-foreground/50">You owe</p>
           <p className="mt-1 text-base font-bold text-negative tabular-nums">
             {hidden ? "••••" : formatMoney(balances.youOwe, currency)}
           </p>
-        </Card>
-        <Card className="p-3 text-center">
+          {balances.youOwe > 0 && <p className="mt-1 text-[10px] text-foreground/40">Tap to record a settlement</p>}
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            setSettlePreset({
+              direction: "theyOwe",
+              amount: balances.youAreOwed > 0 ? balances.youAreOwed : undefined,
+            } as any)
+          }
+          className="cursor-pointer rounded-2xl border border-border bg-surface p-3 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:scale-[1.01] hover:bg-surface-muted active:scale-[0.99]"
+        >
           <p className="text-xs text-foreground/50">Owed to you</p>
           <p className="mt-1 text-base font-bold text-positive tabular-nums">
             {hidden ? "••••" : formatMoney(balances.youAreOwed, currency)}
           </p>
-        </Card>
+          {balances.youAreOwed > 0 && <p className="mt-1 text-[10px] text-foreground/40">Tap to record a settlement</p>}
+        </button>
         <Card className="p-3 text-center">
           <p className="text-xs text-foreground/50">Net</p>
           {hidden ? (
@@ -226,7 +246,18 @@ export default function DashboardPage() {
           <SectionTitle title="Balances" />
           <Card className="divide-y divide-border p-0">
             {balances.byPerson.slice(0, 6).map((b) => (
-              <div key={b.personId} className="flex items-center gap-3 px-4 py-3">
+              <button
+                type="button"
+                key={b.personId}
+                onClick={() =>
+                  setSettlePreset({
+                    personId: b.personId,
+                    direction: b.net > 0 ? "theyOwe" : "iOwe",
+                    amount: Math.abs(b.net),
+                  })
+                }
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-surface-muted active:bg-surface-muted"
+              >
                 <Avatar name={resolveName(b.personId)} size={38} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{resolveName(b.personId)}</p>
@@ -235,20 +266,10 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 <MoneyText amount={Math.abs(b.net)} currency={currency} className="font-semibold" />
-                <Button
-                  size="sm"
-                  variant="soft"
-                  onClick={() =>
-                    setSettlePreset({
-                      personId: b.personId,
-                      direction: b.net > 0 ? "theyOwe" : "iOwe",
-                      amount: Math.abs(b.net),
-                    })
-                  }
-                >
+                <span className="rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand">
                   Settle
-                </Button>
-              </div>
+                </span>
+              </button>
             ))}
           </Card>
         </div>

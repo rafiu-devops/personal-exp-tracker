@@ -15,7 +15,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Wait until both the splash screen animation completes and auth state loading is finished
     if (animationFinished && !loading) {
       router.replace(user ? "/dashboard" : "/login");
     }

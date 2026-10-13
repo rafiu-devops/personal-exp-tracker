@@ -28,7 +28,15 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  if (loading || !user) {
+  if (loading) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center">
+        <Spinner className="h-6 w-6 text-brand" />
+      </div>
+    );
+  }
+
+  if (!user) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
         <Spinner className="h-6 w-6 text-brand" />

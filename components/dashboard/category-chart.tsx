@@ -27,8 +27,8 @@ export function CategoryChart({ data }: { data: ChartDatum[] }) {
               paddingAngle={2}
               stroke="none"
             >
-              {data.map((entry) => (
-                <Cell key={entry.name} fill={entry.color} />
+              {data.map((entry, idx) => (
+                <Cell key={`${entry.name}-${idx}`} fill={entry.color} />
               ))}
             </Pie>
             <Tooltip
@@ -45,8 +45,8 @@ export function CategoryChart({ data }: { data: ChartDatum[] }) {
         </ResponsiveContainer>
       </div>
       <ul className="min-w-0 flex-1 space-y-1.5">
-        {data.slice(0, 6).map((entry) => (
-          <li key={entry.name} className="flex items-center gap-2 text-sm">
+        {data.slice(0, 6).map((entry, idx) => (
+          <li key={`${entry.name}-${idx}`} className="flex items-center gap-2 text-sm">
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: entry.color }} />
             <span className="min-w-0 flex-1 truncate text-foreground/70">{entry.name}</span>
             <span className="font-medium tabular-nums">{formatMoney(entry.value)}</span>

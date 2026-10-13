@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { Avatar, IconButton } from "@/components/ui";
-import { ThemeToggle } from "./theme-toggle";
+
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/cn";
 import {
@@ -73,24 +73,43 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50">
       <div
-        className="absolute inset-0 bg-black/45 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
         onClick={close}
       />
-      <aside className="relative z-10 flex h-full w-72 max-w-[85vw] flex-col border-r border-border bg-surface shadow-xl animate-fade-in">
-        <div className="flex items-center gap-3 border-b border-border px-4 py-4">
-          <Avatar name={profile?.name ?? "You"} src={profile?.photoURL} size={48} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-semibold">{profile?.name ?? "You"}</p>
-            <p className="truncate text-xs text-foreground/55">{profile?.email}</p>
+      <aside
+        className={cn(
+          "relative z-10 flex h-full w-72 max-w-[85vw] flex-col bg-surface shadow-2xl border-r border-border transition-transform duration-300 ease-out",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="relative flex items-start justify-between px-4 py-5 bg-gradient-to-br from-brand to-brand/90 text-white overflow-hidden">
+          <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -bottom-10 -left-10 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative flex items-center gap-3">
+            <Avatar name={profile?.name ?? "You"} src={profile?.photoURL} size={48} />
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold tracking-tight">
+                {profile?.name ?? "You"}
+              </p>
+              <p className="truncate text-xs text-white/70">{profile?.email}</p>
+            </div>
           </div>
-          <IconButton label="Close menu" onClick={close}>
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-            </svg>
-          </IconButton>
+          <div className="relative flex items-center gap-1">
+            <IconButton label="Close menu" onClick={close} className="text-white/90 hover:bg-white/15">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              </svg>
+            </IconButton>
+          </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2 py-3">
+        <nav className="flex-1 overflow-y-auto px-2 py-4">
           {MENU.map(({ href, label, Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
@@ -99,33 +118,43 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
                 href={href}
                 onClick={close}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+                  "group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   active
-                    ? "bg-brand/10 text-brand"
-                    : "text-foreground/70 hover:bg-surface-muted hover:text-foreground"
+                    ? "text-brand shadow-sm ring-1 ring-brand/20 bg-brand/10"
+                    : "text-foreground/70 hover:text-foreground hover:bg-surface-muted"
                 )}
               >
-                <Icon className="h-5 w-5" />
-                {label}
+                <div
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-xl transition",
+                    active
+                      ? "bg-gradient-to-br from-brand to-brand/85 text-white shadow-md shadow-brand/30"
+                      : "bg-surface-muted text-foreground/60 group-hover:bg-surface group-hover:text-brand"
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                <span className="flex-1">{label}</span>
+                {active && (
+                  <span className="absolute right-2 h-1.5 w-1.5 rounded-full bg-brand shadow-[0_0_0_4px_rgba(99,102,241,0.12)]" />
+                )}
               </Link>
             );
           })}
         </nav>
 
         <div className="border-t border-border px-3 py-3">
-          <div className="mb-2 flex items-center justify-between rounded-xl px-1 py-1">
-            <span className="text-sm text-foreground/60">Theme</span>
-            <ThemeToggle />
-          </div>
           <button
             type="button"
             onClick={() => {
               close();
               void signOutUser();
             }}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-negative transition hover:bg-negative/10"
+            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-negative transition hover:bg-negative/10"
           >
-            <LogoutIcon className="h-5 w-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-negative/10 text-negative">
+              <LogoutIcon className="h-5 w-5" />
+            </div>
             Sign out
           </button>
         </div>

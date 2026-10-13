@@ -143,59 +143,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("online", runSync);
   }, []);
 
-  useEffect(() => {
-    // If we have an active offline session, initialize immediately
-    const existingOffline = getOfflineSession();
-    if (existingOffline) {
-      setUser(existingOffline);
-      const cached = readCachedProfile(existingOffline.uid);
-      if (cached) setProfile(cached);
-      setLoadedProfile(true);
-      setLoading(false);
-    }
-
-    if (!configured) {
-      setLoading(false);
-      return;
-    }
-    const auth = getFirebaseAuth();
-
-    // Check for result from redirect sign-in (fallback for mobile/popups)
-    void getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          clearOfflineSession();
-          void ensureUserProfile(result.user);
-        }
-      })
-      .catch((err) => {
-        console.error("Redirect sign-in error:", err);
-      });
-
-    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
-      if (nextUser) {
-        clearOfflineSession();
-        setUser(nextUser);
-        const cached = readCachedProfile(nextUser.uid);
+    useEffect(() => {
+      // If we have an active offline session, initialize immediately
+      const existingOffline = getOfflineSession();
+      if (existingOffline) {
+        setUser(existingOffline);
+        const cached = readCachedProfile(existingOffline.uid);
         if (cached) setProfile(cached);
-        void loadProfile(nextUser);
-      } else {
-        // If not logged into Firebase, preserve offline session if one is active
-        const offlineSession = getOfflineSession();
-        if (offlineSession) {
-          setUser(offlineSession);
-          const cached = readCachedProfile(offlineSession.uid);
-          if (cached) setProfile(cached);
-        } else {
-          setUser(null);
-          setProfile(null);
-          setLoadedProfile(false);
-        }
+        setLoadedProfile(true);
+        setLoading(false);
       }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [configured, loadProfile]);
+
+      if (!configured || (!isOnline() && !existingOffline)) {
+        setUser(null);
+        setProfile(null);
+        setLoadedProfile(false);
+        setLoading(false);
+        return;
+      }
+
+      const auth = getFirebaseAuth();
+
+      // Check for result from redirect sign-in (fallback for mobile/popups)
+      void getRedirectResult(auth)
+        .then((result) => {
+          if (result?.user) {
+            clearOfflineSession();
+            void ensureUserProfile(result.user);
+          }
+        })
+        .catch((err) => {
+          console.error("Redirect sign-in error:", err);
+        });
+
+      const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+        if (nextUser) {
+          clearOfflineSession();
+          setUser(nextUser);
+          const cached = readCachedProfile(nextUser.uid);
+          if (cached) setProfile(cached);
+          void loadProfile(nextUser);
+        } else {
+          // If not logged into Firebase, preserve offline session if one is active
+          const offlineSession = getOfflineSession();
+          if (offlineSession) {
+            setUser(offlineSession);
+            const cached = readCachedProfile(offlineSession.uid);
+            if (cached) setProfile(cached);
+          } else {
+            setUser(null);
+            setProfile(null);
+            setLoadedProfile(false);
+          }
+        }
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    }, [configured, loadProfile]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -433,18 +437,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOutUser = useCallback(async () => {
+    const currentUid = user?.uid;
     clearOfflineSession();
-    const current = getFirebaseAuth().currentUser;
-    if (current) clearCachedProfile(current.uid);
     try {
-      await signOut(getFirebaseAuth());
+      const auth = getFirebaseAuth();
+      if (auth.currentUser) {
+        clearCachedProfile(auth.currentUser.uid);
+        await signOut(auth);
+      } else if (currentUid) {
+        clearCachedProfile(currentUid);
+      }
     } catch {
       // Ignore if offline
     }
     setUser(null);
     setProfile(null);
     setLoadedProfile(false);
-  }, []);
+    setLoading(false);
+  }, [user]);
 
   const refreshProfile = useCallback(async () => {
     const current = getFirebaseAuth().currentUser;
