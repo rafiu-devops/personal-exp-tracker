@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Spinner } from "@/components/ui";
 import { ExpenzaPinwheelSvg } from "@/components/logo";
+import { InstallAppPrompt } from "@/components/pwa/install-app";
 import { EXPENZA_BRAND } from "@/lib/theme";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -70,6 +71,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="w-full">{children}</div>
         )}
       </div>
+      <InstallAppPrompt />
     </div>
   );
 }
